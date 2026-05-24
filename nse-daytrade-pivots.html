@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMCPivotEdge — NSE Technical Screener | Day Trade & Scalp Levels</title>
+  <style>
+    /* Plain, Institutional Terminal Theme */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0a0a0a;
+      color: #d1d5db;
+      margin: 0;
+      padding: 30px;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Top Titles & Hints */
+    .main-header {
+      margin-bottom: 25px;
+    }
+
+    .main-header h1 {
+      font-size: 24px;
+      color: #58a6ff;
+      margin: 0 0 5px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .main-header .subtitle {
+      color: #8b949e;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .hint {
+      color: #8b949e;
+      font-size: 13px;
+      margin: -15px 0 25px 0;
+    }
+
+    .hint b {
+      color: #d1d5db;
+    }
+
+    /* Search Bar Area */
+    .search-area {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input {
+      background: #1f1f1f;
+      color: #fff;
+      border: 1px solid #333;
+      padding: 8px 12px;
+      font-size: 16px;
+      width: 250px;
+      text-transform: uppercase;
+    }
+
+    input:focus {
+      border-color: #58a6ff;
+      outline: none;
+    }
+
+    .search-area button {
+      background: #238636;
+      color: #fff;
+      border: none;
+      padding: 9px 16px;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .search-area button:hover {
+      background: #2ea043;
+    }
+
+    .search-area button:disabled {
+      background: #333;
+      cursor: not-allowed;
+      color: #777;
+    }
+
+    #status {
+      margin-bottom: 20px;
+      color: #8b949e;
+    }
+
+    .error {
+      color: #ff6b6b !important;
+    }
+
+    /* Header / Price Block */
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2px solid #333;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+    }
+
+    .ticker-info h2 {
+      margin: 0 0 5px 0;
+      font-size: 28px;
+      color: #ffffff;
+      letter-spacing: 1px;
+    }
+
+    .ticker-info span {
+      color: #8b949e;
+      font-size: 14px;
+    }
+
+    .price-info {
+      text-align: right;
+    }
+
+    .price-info .ltp {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 0 0 5px 0;
+    }
+
+    .price-info .change {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* Data Tables */
+    h3 {
+      color: #ffffff;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 30px 0 10px 0;
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #1f1f1f;
+      vertical-align: middle;
+    }
+
+    th {
+      color: #8b949e;
+      font-weight: normal;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .col-metric {
+      width: 40%;
+      color: #8b949e;
+    }
+
+    .col-value {
+      width: 60%;
+      font-weight: 600;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .col-logic {
+      color: #a1a1aa;
+      line-height: 1.4;
+    }
+
+    /* Column widths for 3-column tables to optimize horizontal spacing */
+    .three-col-table th.col-metric,
+    .three-col-table td.col-metric {
+      width: 18%;
+    }
+
+    .three-col-table th.col-value,
+    .three-col-table td.col-value {
+      width: 22%;
+    }
+
+    .three-col-table th.col-logic,
+    .three-col-table td.col-logic {
+      width: 60%;
+    }
+
+    /* Monospaced Numeric Fonts */
+    .num-mono {
+      font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      letter-spacing: -0.2px;
+    }
+
+    /* Premium Micro Semantic Badges */
+    .pill-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      vertical-align: middle;
+    }
+
+    .pill-badge.green {
+      background-color: rgba(74, 222, 128, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.2);
+    }
+
+    .pill-badge.red {
+      background-color: rgba(248, 113, 113, 0.12);
+      color: #f87171;
+      border: 1px solid rgba(248, 113, 113, 0.2);
+    }
+
+    .pill-badge.amber {
+      background-color: rgba(251, 191, 36, 0.12);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+
+    .pill-badge.blue {
+      background-color: rgba(96, 165, 250, 0.12);
+      color: #60a5fa;
+      border: 1px solid rgba(96, 165, 250, 0.2);
+    }
+
+    .pill-badge.white {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #e5e7eb;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    /* CSS Tooltip Implementation */
+    .tooltip {
+      position: relative;
+      cursor: help;
+      border-bottom: 1px dashed #444;
+      padding-bottom: 1px;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 280px;
+      background-color: #161b22;
+      color: #c9d1d9;
+      text-align: left;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 10px 14px;
+      position: absolute;
+      z-index: 100;
+      bottom: 130%;
+      /* Position above target */
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.15s ease-in-out;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: normal;
+      pointer-events: none;
+      white-space: normal;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Functional Colors */
+    .green {
+      color: #4ade80;
+    }
+
+    .red {
+      color: #f87171;
+    }
+
+    .amber {
+      color: #fbbf24;
+    }
+
+    .blue {
+      color: #60a5fa;
+    }
+
+    .white {
+      color: #ffffff;
+    }
+
+    /* Mini Grid for Session Data */
+    .session-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px 30px;
+      margin-bottom: 30px;
+    }
+
+    .session-grid div {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .session-grid span.lbl {
+      color: #8b949e;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .session-grid span.val {
+      font-size: 16px;
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    /* Highlight Row for Verdict */
+    .row-verdict td {
+      background-color: #111827;
+      border-top: 1px solid #333;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+
+    /* Info Box */
+    .info-box {
+      background: #111827;
+      border-left: 4px solid #58a6ff;
+      padding: 16px 20px;
+      margin-top: 40px;
+      border-radius: 4px;
+    }
+
+    .info-box h4 {
+      margin: 0 0 10px 0;
+      color: #e5e7eb;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .info-box p {
+      margin: 0 0 8px 0;
+      color: #a1a1aa;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .info-box ul {
+      margin: 0 0 12px 0;
+      padding-left: 20px;
+      color: #a1a1aa;
+      font-size: 13px;
+    }
+
+    .info-box li {
+      margin-bottom: 6px;
+    }
+
+    /* Warning Footer */
+    .footer-warning {
+      margin-top: 25px;
+      padding-top: 15px;
+      border-top: 1px solid #333;
+      color: #8b949e;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    /* Tabs Navigation */
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid #222;
+      margin: 25px 0;
+      gap: 10px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: #8b949e;
+      border: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .tab-btn:hover {
+      color: #ffffff;
+    }
+
+    .tab-btn.active {
+      color: #58a6ff;
+      border-bottom: 2px solid #58a6ff;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .badge-experimental {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      margin-left: 8px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* Timeframe Toggle */
+    .timeframe-toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      background: #111827;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #222;
+    }
+
+    .timeframe-toggle-container span {
+      color: #8b949e;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .toggle-group {
+      display: flex;
+      gap: 5px;
+    }
+
+    .toggle-btn {
+      background: #1f1f1f;
+      color: #8b949e;
+      border: 1px solid #333;
+      padding: 5px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      border-radius: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-btn:hover {
+      color: #ffffff;
+      border-color: #58a6ff;
+    }
+
+    .toggle-btn.active {
+      background: #58a6ff;
+      color: #0a0a0a;
+      border-color: #58a6ff;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="main-header">
+      <h1>📊 SMCPivotEdge</h1>
+      <p class="subtitle">Institutional Grade Actionable Day Trade &amp; Scalp Levels for NSE</p>
+    </div>
+
+    <div class="search-area">
+      <input id="sym" type="text" placeholder="TICKER (e.g. RELIANCE)" onkeydown="if(event.key==='Enter') fetchStock()"
+        autocomplete="off" style="width: 220px;" />
+      <button id="btn" onclick="fetchStock()">Run Analysis</button>
+    </div>
+
+    <p class="hint">Use exact NSE ticker: <b>RELIANCE</b> · <b>TCS</b> · <b>HDFCBANK</b> · <b>TATACOMM</b></p>
+
+    <div id="status">Ready. Type a ticker and press enter.</div>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    let activeStockData = null;
+    let selectedTimeframe = '1d';
+
+    function setTimeframe(tf) {
+      if (!activeStockData) return;
+      selectedTimeframe = tf;
+
+      // Update indicators timeframe active class
+      document.querySelectorAll('.toggle-btn').forEach(btn => {
+        if (btn.id.startsWith('tf-')) btn.classList.remove('active');
+      });
+      const activeBtn = document.getElementById(`tf-${tf}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const tableBody = document.getElementById('indicators-table-body');
+      if (tableBody) {
+        tableBody.innerHTML = getIndicatorsTableHTML(tf);
+      }
+
+      const levelsBody = document.getElementById('trade-levels-table-body');
+      if (levelsBody) {
+        levelsBody.innerHTML = getTradeLevelsTableHTML(tf);
+      }
+    }
+
+    function getIndicatorsTableHTML(tf) {
+      if (!activeStockData) return '';
+      const data = tf === '5m' ? activeStockData.intra : activeStockData.daily;
+      const volRatio = activeStockData.volRatio;
+
+      // Determine badges
+      // 1. Est. Volume
+      const volBadgeClass = data.volClass;
+      let volBadgeText = 'Normal';
+      if (volRatio >= 1.0) volBadgeText = 'High';
+      if (volRatio < 0.5) volBadgeText = 'Low';
+
+      // 2. VWAP
+      const vwapIsBullish = activeStockData.ltp >= data.vwap;
+      const vwapBadgeClass = vwapIsBullish ? 'green' : 'red';
+      const vwapBadgeText = vwapIsBullish ? 'Bullish' : 'Bearish';
+      const vwapLogic = vwapIsBullish
+        ? 'Price is above the volume-weighted baseline. Buyers are in control.'
+        : 'Price is below the volume-weighted baseline. Sellers are dominating.';
+
+      // 3. EMA Trend
+      let emaBadgeClass = data.emaClass;
+      let emaBadgeText = data.emaTrend;
+      if (emaBadgeText.includes('Uptrend') || emaBadgeText.includes('Bullish')) {
+        emaBadgeText = 'Bullish';
+      } else if (emaBadgeText.includes('Downtrend') || emaBadgeText.includes('Bearish')) {
+        emaBadgeText = 'Bearish';
+      } else {
+        emaBadgeText = 'Neutral';
+      }
+
+      // 4. RSI
+      let rsiBadgeText = 'Neutral';
+      if (data.rsi > 70) rsiBadgeText = 'Overbought';
+      if (data.rsi < 40) rsiBadgeText = 'Bearish';
+      if (data.rsi >= 40 && data.rsi <= 70) rsiBadgeText = 'Healthy';
+
+      // 5. ATR
+      const atrBadgeText = tf === '5m' ? 'Intraday ATR' : 'Daily ATR';
+
+      // Supertrend badge
+      const stDir = data.supertrend.direction;
+      const stClass = stDir === 'Bullish' ? 'green' : stDir === 'Bearish' ? 'red' : 'amber';
+      // MACD badge
+      const macdVal = data.macd.macd;
+      const sigVal = data.macd.signal;
+      const macdHist = data.macd.histogram;
+      let macdBadgeText = '';
+      let macdBadgeClass = '';
+      if (macdVal < 0) {
+        macdBadgeText = macdHist > 0 ? 'Bearish (Weak)' : 'Bearish';
+        macdBadgeClass = macdHist > 0 ? 'amber' : 'red';
+      } else {
+        macdBadgeText = macdHist > 0 ? 'Bullish' : 'Bullish (Weak)';
+        macdBadgeClass = macdHist > 0 ? 'green' : 'amber';
+      }
+      const macdCross = Math.abs(macdHist) < Math.abs(macdVal) * 0.05 ? ' · Crossover' : '';
+      // Bollinger Bands badge
+      const pctB = data.bb.pctB;
+      const bbBadgeText = pctB > 80 ? 'Overbought' : pctB < 20 ? 'Oversold' : data.bb.width < 2 ? 'Squeeze' : 'Normal';
+      const bbBadgeClass = pctB > 80 ? 'amber' : pctB < 20 ? 'green' : data.bb.width < 2 ? 'blue' : 'white';
+      // ADX badge
+      const adxVal = data.adx.adx;
+      const adxBadgeText = adxVal >= 40 ? 'Strong Trend' : adxVal >= 25 ? 'Trending' : adxVal >= 20 ? 'Weak Trend' : 'Ranging';
+      const adxBadgeClass = adxVal >= 40 ? 'green' : adxVal >= 25 ? 'blue' : adxVal >= 20 ? 'amber' : 'white';
+      const adxDirText = data.adx.plusDI > data.adx.minusDI ? '▲ Bullish DI' : '▼ Bearish DI';
+      const adxDirClass = data.adx.plusDI > data.adx.minusDI ? 'green' : 'red';
+
+      return `
+        <tr>
+          <th class="col-metric" style="width: 40%;">Metric</th>
+          <th class="col-value" style="width: 60%;">Value & Bias</th>
+        </tr>
+        <tr>
+          <td class="col-metric">Est. Volume</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="num-mono">${fmtVol(activeStockData.totalVol)}</span>
+              <span class="pill-badge ${volBadgeClass}">${volBadgeText}</span>
+              <span class="tooltiptext">${data.volLogic}</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-metric">VWAP (Baseline)</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="num-mono ${vwapBadgeClass}">₹${fmt(data.vwap)}</span>
+              <span class="pill-badge ${vwapBadgeClass}">${vwapBadgeText}</span>
+              <span class="tooltiptext">${vwapLogic}</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-metric">EMA Trend</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="${data.emaClass}">${data.emaTrend}</span>
+              <span class="pill-badge ${emaBadgeClass}">${emaBadgeText}</span>
+              <span class="tooltiptext">${data.emaLogic}</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-metric">RSI (14)</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="num-mono ${data.rsiClass}">${data.rsi.toFixed(1)}</span>
+              <span class="pill-badge ${data.rsiClass}">${rsiBadgeText}</span>
+              <span class="tooltiptext">${data.rsiLogic}</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-metric">ATR (14)</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="num-mono blue">₹${fmt(data.atr)}</span>
+              <span class="pill-badge blue">${atrBadgeText}</span>
+              <span class="tooltiptext">${data.atrLogic}</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-metric">Supertrend (10,3)</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="num-mono ${stClass}">₹${fmt(data.supertrend.value)}</span>
+              <span class="pill-badge ${stClass}">${stDir}</span>
+              <span class="tooltiptext">Supertrend (period 10, multiplier 3). Price is ${stDir === 'Bullish' ? 'above' : 'below'} the Supertrend line at ₹${fmt(data.supertrend.value)}, indicating a ${stDir.toLowerCase()} trend. Flip above/below this line signals trend reversal.</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-metric">MACD (12,26,9)</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="num-mono ${macdBadgeClass}">${data.macd.macd.toFixed(2)}</span>
+              <span class="pill-badge ${macdBadgeClass}">${macdBadgeText}${macdCross}</span>
+              <span class="tooltiptext">MACD Line: ${data.macd.macd.toFixed(2)} · Signal: ${data.macd.signal.toFixed(2)} · Histogram: ${data.macd.histogram.toFixed(2)}. ${macdHist > 0 ? 'MACD is above signal line — bullish momentum building.' : 'MACD is below signal line — bearish momentum building.'}</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-metric">Bollinger Bands (20)</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="num-mono">₹${fmt(data.bb.lower)} – ₹${fmt(data.bb.upper)}</span>
+              <span class="pill-badge ${bbBadgeClass}">${bbBadgeText}</span>
+              <span class="tooltiptext">Upper: ₹${fmt(data.bb.upper)} · Mid (SMA20): ₹${fmt(data.bb.middle)} · Lower: ₹${fmt(data.bb.lower)} · Band Width: ${data.bb.width.toFixed(1)}% · %B: ${pctB.toFixed(0)}%. ${bbBadgeText === 'Squeeze' ? 'Band width is contracting — a breakout move is likely imminent.' : pctB > 80 ? 'Price is near the upper band — overbought territory.' : pctB < 20 ? 'Price is near the lower band — oversold territory.' : 'Price is within normal band range.'}</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-metric">ADX (14)</td>
+          <td class="col-value">
+            <span class="tooltip">
+              <span class="num-mono">${adxVal.toFixed(1)}</span>
+              <span class="pill-badge ${adxBadgeClass}">${adxBadgeText}</span>
+              <span class="pill-badge ${adxDirClass}" style="margin-left:4px;">${adxDirText}</span>
+              <span class="tooltiptext">ADX: ${adxVal.toFixed(1)} (${adxBadgeText}) · +DI: ${data.adx.plusDI.toFixed(1)} · -DI: ${data.adx.minusDI.toFixed(1)}. ADX measures trend strength — above 25 = trending, below 20 = ranging. ${adxVal < 20 ? 'Market is consolidating — avoid ATR breakout trades.' : adxVal >= 40 ? 'Very strong trend in progress.' : 'Trend is developing.'}</span>
+            </span>
+          </td>
+        </tr>
+      `;
+    }
+
+    function getTradeLevelsTableHTML(tf) {
+      if (!activeStockData) return '';
+      const levels = tf === '5m' ? activeStockData.intra.tradeLevels : activeStockData.daily.tradeLevels;
+      const ltp = activeStockData.ltp;
+
+      const longActive = levels.direction === 'Long'
+        ? 'style="background-color: rgba(74, 222, 128, 0.08); border-left: 4px solid #4ade80;"'
+        : 'style="opacity: 0.65; background-color: rgba(255, 255, 255, 0.01);"';
+      const shortActive = levels.direction === 'Short'
+        ? 'style="background-color: rgba(248, 113, 113, 0.08); border-left: 4px solid #f87171;"'
+        : 'style="opacity: 0.65; background-color: rgba(255, 255, 255, 0.01);"';
+
+      if (tf === '5m') {
+        return `
+          <tr ${longActive}>
+            <td class="green" style="font-weight: bold; padding: 12px 10px;">LONG (Buy)</td>
+            <td style="padding: 12px 10px; font-weight: 500;">Above ₹${fmt(levels.long.trigger)}</td>
+            <td class="red" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.long.sl)}</td>
+            <td class="green" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.long.t1)}</td>
+            <td class="green" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.long.t2)}</td>
+            <td class="blue" style="padding: 12px 10px;">1 : ${levels.long.rr.toFixed(2)}</td>
+          </tr>
+          <tr ${shortActive}>
+            <td class="red" style="font-weight: bold; padding: 12px 10px;">SHORT (Sell)</td>
+            <td style="padding: 12px 10px; font-weight: 500;">Below ₹${fmt(levels.short.trigger)}</td>
+            <td class="red" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.short.sl)}</td>
+            <td class="green" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.short.t1)}</td>
+            <td class="green" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.short.t2)}</td>
+            <td class="blue" style="padding: 12px 10px;">1 : ${levels.short.rr.toFixed(2)}</td>
+          </tr>
+          <tr class="row-verdict">
+            <td colspan="2" style="font-weight: bold; padding: 16px 12px; font-size: 13px;">RECOMMENDED STRATEGY</td>
+            <td class="${levels.verdictClass}" style="font-weight: bold; font-size: 14px; padding: 16px 12px;">${levels.verdictVal}</td>
+            <td colspan="3" class="col-logic" style="padding: 16px 12px; font-size: 13px; color: #a1a1aa; line-height: 1.4;">${levels.verdictLogic}</td>
+          </tr>
+        `;
+      } else {
+        // Day Trade (SMC Pivots) strategy calculation - levels are computed dynamically in activeStockData
+        const PP = activeStockData.pivots.PP;
+        const R1 = activeStockData.pivots.R1;
+        const R2 = activeStockData.pivots.R2;
+        const R3 = activeStockData.pivots.R3;
+        const S1 = activeStockData.pivots.S1;
+        const S2 = activeStockData.pivots.S2;
+        const S3 = activeStockData.pivots.S3;
+
+        let longSlLabel = 'Support';
+        let longT1Label = 'Resistance';
+        let longT2Label = 'Resistance';
+
+        if (levels.long.trigger === PP) {
+          longSlLabel = 'S1 Support';
+          longT1Label = 'R1 Resist';
+          longT2Label = 'R2 Resist';
+        } else if (levels.long.trigger === R1) {
+          longSlLabel = 'Pivot Point';
+          longT1Label = 'R2 Resist';
+          longT2Label = 'R3 Resist';
+        } else if (levels.long.trigger === R2) {
+          longSlLabel = 'R1 Resist';
+          longT1Label = 'R3 Resist';
+          longT2Label = 'R3 + Ext';
+        } else if (levels.long.trigger === R3) {
+          longSlLabel = 'R2 Resist';
+          longT1Label = 'R3 + Ext';
+          longT2Label = 'R3 + 2xExt';
+        }
+
+        let shortSlLabel = 'Resistance';
+        let shortT1Label = 'Support';
+        let shortT2Label = 'Support';
+
+        if (levels.short.trigger === PP) {
+          shortSlLabel = 'R1 Resist';
+          shortT1Label = 'S1 Support';
+          shortT2Label = 'S2 Support';
+        } else if (levels.short.trigger === S1) {
+          shortSlLabel = 'Pivot Point';
+          shortT1Label = 'S2 Support';
+          shortT2Label = 'S3 Support';
+        } else if (levels.short.trigger === S2) {
+          shortSlLabel = 'S1 Support';
+          shortT1Label = 'S3 Support';
+          shortT2Label = 'S3 - Ext';
+        } else if (levels.short.trigger === S3) {
+          shortSlLabel = 'S2 Support';
+          shortT1Label = 'S3 - Ext';
+          shortT2Label = 'S3 - 2xExt';
+        }
+
+        return `
+          <tr ${longActive}>
+            <td class="green" style="font-weight: bold; padding: 12px 10px;">LONG (Buy)</td>
+            <td style="padding: 12px 10px; font-weight: 500;">Above ₹${fmt(levels.long.trigger)}</td>
+            <td class="red" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.long.sl)} <span style="font-size: 10px; font-weight: 400; color: #8b949e;"><br>(${longSlLabel})</span></td>
+            <td class="green" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.long.t1)} <span style="font-size: 10px; font-weight: 400; color: #8b949e;"><br>(${longT1Label})</span></td>
+            <td class="green" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.long.t2)} <span style="font-size: 10px; font-weight: 400; color: #8b949e;"><br>(${longT2Label})</span></td>
+            <td class="blue" style="padding: 12px 10px;">1 : ${levels.long.rr.toFixed(2)}</td>
+          </tr>
+          <tr ${shortActive}>
+            <td class="red" style="font-weight: bold; padding: 12px 10px;">SHORT (Sell)</td>
+            <td style="padding: 12px 10px; font-weight: 500;">Below ₹${fmt(levels.short.trigger)}</td>
+            <td class="red" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.short.sl)} <span style="font-size: 10px; font-weight: 400; color: #8b949e;"><br>(${shortSlLabel})</span></td>
+            <td class="green" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.short.t1)} <span style="font-size: 10px; font-weight: 400; color: #8b949e;"><br>(${shortT1Label})</span></td>
+            <td class="green" style="padding: 12px 10px; font-weight: 600;">₹${fmt(levels.short.t2)} <span style="font-size: 10px; font-weight: 400; color: #8b949e;"><br>(${shortT2Label})</span></td>
+            <td class="blue" style="padding: 12px 10px;">1 : ${levels.short.rr.toFixed(2)}</td>
+          </tr>
+          <tr class="row-verdict">
+            <td colspan="2" style="font-weight: bold; padding: 16px 12px; font-size: 13px;">RECOMMENDED STRATEGY</td>
+            <td class="${levels.verdictClass}" style="font-weight: bold; font-size: 14px; padding: 16px 12px;">${levels.verdictVal}</td>
+            <td colspan="3" class="col-logic" style="padding: 16px 12px; font-size: 13px; color: #a1a1aa; line-height: 1.4;">${levels.verdictLogic}</td>
+          </tr>
+        `;
+      }
+    }
+
+    const PROXY = 'https://yfworker.anoopmaddasseri.workers.dev/?url=';
+    const YF_INTRADAY = sym => PROXY + encodeURIComponent(`https://query2.finance.yahoo.com/v8/finance/chart/${sym}.NS?interval=5m&range=5d&includePrePost=false`);
+    const YF_DAILY = sym => PROXY + encodeURIComponent(`https://query2.finance.yahoo.com/v8/finance/chart/${sym}.NS?interval=1d&range=1y`);
+
+    async function tryFetch(url) {
+      try {
+        const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (r.ok) {
+          const j = await r.json();
+          if (j?.chart?.result?.[0]) return j;
+        }
+      } catch (err) { console.error("Fetch failed: ", err); }
+      return null;
+    }
+
+    // Math Helpers
+    function calcEMA(data, period) {
+      if (data.length < period) return data.at(-1) ?? 0;
+      const k = 2 / (period + 1);
+      let ema = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      for (let i = period; i < data.length; i++) ema = data[i] * k + ema * (1 - k);
+      return ema;
+    }
+
+    function calcEMAArray(data, period) {
+      if (data.length < period) return [];
+      const k = 2 / (period + 1);
+      let ema = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      const result = [ema];
+      for (let i = period; i < data.length; i++) { ema = data[i] * k + ema * (1 - k); result.push(ema); }
+      return result;
+    }
+
+    function calcMACD(closes, fast = 12, slow = 26, signal = 9) {
+      if (closes.length < slow + signal) return { macd: 0, signal: 0, histogram: 0 };
+      const ema12 = calcEMAArray(closes, fast);
+      const ema26 = calcEMAArray(closes, slow);
+      const offset = ema12.length - ema26.length;
+      const macdLine = ema26.map((v, i) => ema12[i + offset] - v);
+      const signalArr = calcEMAArray(macdLine, signal);
+      const m = macdLine.at(-1), s = signalArr.at(-1);
+      return { macd: m, signal: s, histogram: m - s };
+    }
+
+    function calcSupertrend(highs, lows, closes, period = 10, multiplier = 3) {
+      if (closes.length < period + 2) return { value: closes.at(-1) ?? 0, direction: 'Neutral' };
+      const atrs = [];
+      for (let i = 1; i < closes.length; i++) {
+        atrs.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1])));
+      }
+      let smoothATR = atrs.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      const smoothATRs = [smoothATR];
+      for (let i = period; i < atrs.length; i++) {
+        smoothATR = (smoothATR * (period - 1) + atrs[i]) / period;
+        smoothATRs.push(smoothATR);
+      }
+      const si = period;
+      let fUp = (highs[si] + lows[si]) / 2 + multiplier * smoothATRs[0];
+      let fLo = (highs[si] + lows[si]) / 2 - multiplier * smoothATRs[0];
+      let dir = closes[si] <= fUp ? -1 : 1;
+      let st = dir === -1 ? fUp : fLo;
+      for (let i = 1; i < smoothATRs.length; i++) {
+        const idx = si + i;
+        const bUp = (highs[idx] + lows[idx]) / 2 + multiplier * smoothATRs[i];
+        const bLo = (highs[idx] + lows[idx]) / 2 - multiplier * smoothATRs[i];
+        const prevFUp = fUp;
+        const prevFLo = fLo;
+        const prevClose = closes[idx - 1];
+        fUp = (bUp < prevFUp || prevClose > prevFUp) ? bUp : prevFUp;
+        fLo = (bLo > prevFLo || prevClose < prevFLo) ? bLo : prevFLo;
+        if (dir === -1) {
+          if (closes[idx] > fUp) {
+            dir = 1;
+            st = fLo;
+          } else {
+            st = fUp;
+          }
+        } else {
+          if (closes[idx] < fLo) {
+            dir = -1;
+            st = fUp;
+          } else {
+            st = fLo;
+          }
+        }
+      }
+      return { value: st, direction: dir === 1 ? 'Bullish' : 'Bearish' };
+    }
+
+    function calcBollingerBands(closes, period = 20, mult = 2) {
+      if (closes.length < period) return { upper: 0, middle: 0, lower: 0, width: 0, pctB: 50 };
+      const sl = closes.slice(-period);
+      const sma = sl.reduce((a, b) => a + b, 0) / period;
+      const stdDev = Math.sqrt(sl.reduce((a, b) => a + Math.pow(b - sma, 2), 0) / period);
+      const upper = sma + mult * stdDev, lower = sma - mult * stdDev;
+      const ltp = closes.at(-1);
+      return { upper, middle: sma, lower, width: (upper - lower) / sma * 100, pctB: (upper - lower) > 0 ? (ltp - lower) / (upper - lower) * 100 : 50 };
+    }
+
+    function calcADX(highs, lows, closes, period = 14) {
+      if (closes.length < period * 2 + 1) return { adx: 0, plusDI: 0, minusDI: 0 };
+      const pDMs = [], mDMs = [], trs = [];
+      for (let i = 1; i < closes.length; i++) {
+        const up = highs[i] - highs[i - 1], dn = lows[i - 1] - lows[i];
+        pDMs.push(up > dn && up > 0 ? up : 0);
+        mDMs.push(dn > up && dn > 0 ? dn : 0);
+        trs.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1])));
+      }
+      let sTR = trs.slice(0, period).reduce((a, b) => a + b, 0);
+      let sPDM = pDMs.slice(0, period).reduce((a, b) => a + b, 0);
+      let sMDM = mDMs.slice(0, period).reduce((a, b) => a + b, 0);
+      let pDI = sTR > 0 ? sPDM / sTR * 100 : 0, mDI = sTR > 0 ? sMDM / sTR * 100 : 0;
+      const dxArr = [(pDI + mDI) > 0 ? Math.abs(pDI - mDI) / (pDI + mDI) * 100 : 0];
+      for (let i = period; i < trs.length; i++) {
+        sTR = sTR - sTR / period + trs[i]; sPDM = sPDM - sPDM / period + pDMs[i]; sMDM = sMDM - sMDM / period + mDMs[i];
+        pDI = sTR > 0 ? sPDM / sTR * 100 : 0; mDI = sTR > 0 ? sMDM / sTR * 100 : 0;
+        dxArr.push((pDI + mDI) > 0 ? Math.abs(pDI - mDI) / (pDI + mDI) * 100 : 0);
+      }
+      let adx = dxArr.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      for (let i = period; i < dxArr.length; i++) adx = (adx * (period - 1) + dxArr[i]) / period;
+      return { adx, plusDI: pDI, minusDI: mDI };
+    }
+
+    function calcRSI(data, period = 14) {
+      if (data.length < period + 1) return 50;
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        const d = data[i] - data[i - 1];
+        d >= 0 ? (gains += d) : (losses -= d);
+      }
+      let ag = gains / period, al = losses / period;
+      for (let i = period + 1; i < data.length; i++) {
+        const d = data[i] - data[i - 1];
+        ag = (ag * (period - 1) + Math.max(d, 0)) / period;
+        al = (al * (period - 1) + Math.max(-d, 0)) / period;
+      }
+      return al === 0 ? 100 : 100 - 100 / (1 + ag / al);
+    }
+
+    function calcATR(highs, lows, closes, period = 14) {
+      if (highs.length < 2) return 0.01;
+      const trs = [];
+      for (let i = 1; i < highs.length; i++) {
+        trs.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1])));
+      }
+      if (trs.length < period) {
+        return trs.reduce((a, b) => a + b, 0) / trs.length;
+      }
+      let atr = trs.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      for (let i = period; i < trs.length; i++) {
+        atr = (atr * (period - 1) + trs[i]) / period;
+      }
+      return Math.max(0.01, atr);
+    }
+
+    function fmt(n) { return parseFloat(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmtVol(n) { if (n >= 1e7) return (n / 1e7).toFixed(2) + 'Cr'; if (n >= 1e5) return (n / 1e5).toFixed(2) + 'L'; return n.toLocaleString('en-IN'); }
+
+    // Table Row Generator
+    function tRow(metric, value, valClass, logic, trClass = "") {
+      return `<tr class="${trClass}">
+    <td class="col-metric">${metric}</td>
+    <td class="col-value ${valClass}">${value}</td>
+    <td class="col-logic">${logic}</td>
+  </tr>`;
+    }
+
+    // Dynamic Market State Evaluator (IST specific)
+    function getMarketStatusHTML() {
+      const now = new Date();
+      const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const day = istTime.getDay(); // 0 = Sunday, 1 = Monday
+      const hours = istTime.getHours();
+      const minutes = istTime.getMinutes();
+
+      const timeInMinutes = (hours * 60) + minutes;
+      const isWeekday = day >= 1 && day <= 5;
+      const isOpen = isWeekday && (timeInMinutes >= 555) && (timeInMinutes < 930);
+
+      if (isOpen) {
+        return `<span style="color: #4ade80;">🟢 <b>Live Market Stream Active</b></span> &nbsp;·&nbsp; Real-time pricing via Yahoo Finance`;
+      } else {
+        return `⏸️ <b>Market Offline (Showing Last Completed Session)</b> &nbsp;·&nbsp; NSE Hours: Mon-Fri, 9:15 AM - 3:30 PM IST &nbsp;·&nbsp; Data via Yahoo Finance`;
+      }
+    }
+
+    async function fetchStock() {
+      const raw = document.getElementById('sym').value.trim().toUpperCase().replace(/\.NS$/, '');
+      if (!raw) return;
+      const sym = raw;
+
+      const btn = document.getElementById('btn');
+      const statusEl = document.getElementById('status');
+      const outputEl = document.getElementById('output');
+
+      btn.disabled = true;
+      btn.textContent = 'Fetching...';
+      statusEl.style.display = 'block';
+      statusEl.className = '';
+      statusEl.innerHTML = `Running analysis for ${sym}...`;
+      outputEl.innerHTML = '';
+
+      try {
+        const [intraJson, dailyJson] = await Promise.all([tryFetch(YF_INTRADAY(sym)), tryFetch(YF_DAILY(sym))]);
+        if (!intraJson || !intraJson.chart.result[0].indicators.quote[0]) {
+          throw new Error(`Could not fetch data for "${sym}". Ensure Python server is running and ticker is correct.`);
+        }
+
+        const meta = intraJson.chart.result[0].meta;
+        const q = intraJson.chart.result[0].indicators.quote[0];
+        const timestamps = intraJson.chart.result[0].timestamp || [];
+
+        const close = [], open = [], high = [], low = [], vol = [];
+        const rawC = q.close || [], rawO = q.open || [], rawH = q.high || [], rawL = q.low || [], rawV = q.volume || [];
+
+        for (let i = 0; i < rawC.length; i++) {
+          if (rawC[i] != null && rawO[i] != null && rawH[i] != null && rawL[i] != null && rawV[i] != null) {
+            close.push(rawC[i]); open.push(rawO[i]); high.push(rawH[i]); low.push(rawL[i]); vol.push(rawV[i]);
+          }
+        }
+
+        if (close.length === 0) throw new Error(`No historical intraday price points found for "${sym}".`);
+
+        let ltp = meta.regularMarketPrice ?? close.at(-1);
+        const exchange = meta.exchangeName || 'NSE';
+        const fullName = meta.longName || meta.shortName || sym;
+
+        // 1. Get initial fallbacks from intraday data
+        let prevClose = meta.previousClose ?? meta.regularMarketPreviousClose ?? meta.chartPreviousClose ?? close[0];
+        let dayOpen = open[0]; // fallback to first 5m candle open
+        let dayHigh = meta.regularMarketDayHigh ?? Math.max(...high.slice(-75));
+        let dayLow = meta.regularMarketDayLow ?? Math.min(...low.slice(-75));
+        let totalVol = meta.regularMarketVolume ?? vol.slice(-75).reduce((a, b) => a + b, 0);
+
+        // 2. Override with official daily historical data if available
+        let prevH = dayHigh, prevL = dayLow, prevC = prevClose;
+        let dailyAtr = 0;
+        let fiftyTwoWeekHigh = dayHigh;
+        let fiftyTwoWeekLow = dayLow;
+        const dC = [], dH = [], dL = [], dO = [], dV = [], dTS = [];
+        if (dailyJson && dailyJson.chart.result[0].indicators.quote[0]) {
+          const dq = dailyJson.chart.result[0].indicators.quote[0];
+
+          const rDC = dq.close || [], rDH = dq.high || [], rDL = dq.low || [], rDO = dq.open || [], rDV = dq.volume || [];
+          const rTS = dailyJson.chart.result[0].timestamp || [];
+          for (let i = 0; i < rDC.length; i++) {
+            if (rDC[i] != null && rDH[i] != null && rDL[i] != null && rDO[i] != null && rDV[i] != null && rDV[i] > 0) {
+              let closeVal = rDC[i];
+              let highVal = rDH[i];
+              let lowVal = rDL[i];
+              let openVal = rDO[i];
+              let volVal = rDV[i];
+
+              // Apply Rights Issue adjustments for EXICOM.NS
+              // Ex-date: July 7, 2025 (timestamp: 1751846400).
+              // Adjustment factor: 208.85 / 217.00 = 0.9624424
+              if (sym === 'EXICOM' && rTS[i] < 1751846400) {
+                const adjFactor = 0.9624424;
+                closeVal *= adjFactor;
+                highVal *= adjFactor;
+                lowVal *= adjFactor;
+                openVal *= adjFactor;
+              }
+
+              dC.push(closeVal); dH.push(highVal); dL.push(lowVal); dO.push(openVal); dV.push(volVal); dTS.push(rTS[i]);
+            }
+          }
+
+          let todayCandleIsPresent = false;
+          if (dTS.length >= 1) {
+            const dailyDateStr = new Date(dTS.at(-1) * 1000).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' });
+            const lastIntraTs = meta.regularMarketTime || (timestamps.length > 0 ? timestamps.at(-1) : Math.floor(Date.now() / 1000));
+            const intraDateStr = new Date(lastIntraTs * 1000).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' });
+            todayCandleIsPresent = (dailyDateStr === intraDateStr);
+          }
+
+          if (dC.length >= 1) {
+            if (todayCandleIsPresent) {
+              dayOpen = dO.at(-1);
+              dayHigh = dH.at(-1);
+              dayLow = dL.at(-1);
+              totalVol = dV.at(-1);
+              // Sync with custom LTP override and enforce high/low consistency
+              dC[dC.length - 1] = ltp;
+              dH[dH.length - 1] = Math.max(dH[dH.length - 1], ltp);
+              dL[dL.length - 1] = Math.min(dL[dL.length - 1], ltp);
+            } else {
+              // Today's candle is not in dailyJson yet, append daily candle for today
+              dC.push(ltp);
+              dH.push(Math.max(dayHigh, ltp));
+              dL.push(Math.min(dayLow, ltp));
+              dO.push(dayOpen);
+              dV.push(totalVol);
+              dTS.push(Math.floor(Date.now() / 1000));
+            }
+
+            fiftyTwoWeekHigh = Math.max(...dH, dayHigh, ltp);
+            fiftyTwoWeekLow = Math.min(...dL, dayLow, ltp);
+          }
+          if (dC.length >= 2) {
+            prevH = dH.at(-2);
+            prevL = dL.at(-2);
+            prevC = dC.at(-2);
+            prevClose = dC.at(-2);
+          }
+          if (dC.length >= 15) {
+            dailyAtr = calcATR(dH, dL, dC, 14);
+          }
+        }
+
+        // 3. Dynamic Circuit Limit Auto-detection Heuristic
+        let circuitLimitPct = 10; // Default fallback
+        let maxObservedMove = 0;
+        if (dC.length > 1) {
+          for (let i = 1; i < dC.length; i++) {
+            const prevDayC = dC[i - 1];
+            if (!prevDayC || prevDayC <= 0) continue;
+            const hVal = dH[i] ?? prevDayC;
+            const lVal = dL[i] ?? prevDayC;
+            const cVal = dC[i] ?? prevDayC;
+
+            const hPct = ((hVal - prevDayC) / prevDayC) * 100;
+            const lPct = ((prevDayC - lVal) / prevDayC) * 100;
+            const cPct = Math.abs(cVal - prevDayC) / prevDayC * 100;
+
+            maxObservedMove = Math.max(maxObservedMove, hPct, lPct, cPct);
+          }
+        }
+
+        let currentMove = 0;
+        if (prevClose && prevClose > 0) {
+          const highMove = ((dayHigh - prevClose) / prevClose) * 100;
+          const lowMove = ((prevClose - dayLow) / prevClose) * 100;
+          const ltpMove = Math.abs(ltp - prevClose) / prevClose * 100;
+          currentMove = Math.max(highMove, lowMove, ltpMove);
+        }
+
+        const finalMaxMove = Math.max(maxObservedMove, currentMove);
+
+        if (finalMaxMove > 10.05) {
+          circuitLimitPct = 20;
+        } else if (finalMaxMove > 5.05) {
+          circuitLimitPct = 10;
+        } else if (finalMaxMove > 2.05) {
+          circuitLimitPct = 5;
+        } else {
+          circuitLimitPct = 10;
+        }
+
+        // 4. Round circuit limits to nearest 0.05 tick size
+        // Upper Circuit: floor to nearest 0.05
+        // Lower Circuit: ceil to nearest 0.05
+        const ucRaw = prevClose * (1 + circuitLimitPct / 100);
+        const lcRaw = prevClose * (1 - circuitLimitPct / 100);
+        const upperCircuit = Math.floor(Math.round(ucRaw * 100) / 5) * 5 / 100;
+        const lowerCircuit = Math.ceil(Math.round(lcRaw * 100) / 5) * 5 / 100;
+
+        const change = ((ltp - prevClose) / prevClose * 100);
+
+        const PP = (prevH + prevL + prevC) / 3;
+        const R1 = (2 * PP) - prevL;
+        const S1 = (2 * PP) - prevH;
+        const R2 = PP + (prevH - prevL);
+        const S2 = PP - (prevH - prevL);
+        const R3 = prevH + 2 * (PP - prevL);
+        const S3 = prevL - 2 * (prevH - PP);
+        const R4 = prevH + 3 * (PP - prevL);
+        const R5 = prevH + 4 * (PP - prevL);
+        const R6 = prevH + 5 * (PP - prevL);
+        const S4 = prevL - 3 * (prevH - PP);
+        const S5 = prevL - 4 * (prevH - PP);
+        const S6 = prevL - 5 * (prevH - PP);
+
+        let pv = 0, tv = 0;
+        if (timestamps.length > 0) {
+          const lastTs = timestamps.at(-1);
+          const lastDateStr = new Date(lastTs * 1000).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' });
+
+          for (let i = 0; i < close.length; i++) {
+            const candleDateStr = new Date(timestamps[i] * 1000).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' });
+            if (candleDateStr === lastDateStr) {
+              pv += close[i] * vol[i];
+              tv += vol[i];
+            }
+          }
+        }
+        const vwap = tv > 0 ? pv / tv : ltp;
+
+        const rsi = calcRSI(close, 14);
+        const ema20 = calcEMA(close, 20);
+        const ema50 = calcEMA(close, 50);
+        const atr = Math.max(0.01, calcATR(high, low, close, 14));
+        if (dailyAtr === 0) dailyAtr = atr * 15; // fallback to daily ATR (e.g. 15x of 5m ATR) if dailyData fails
+
+        const fvLower = vwap - (dailyAtr * 0.5);
+        const fvUpper = vwap + (dailyAtr * 0.5);
+
+        let avgVol20 = 0;
+        if (dailyJson && dV.length > 1) {
+          // Exclude today's current volume (last index) to avoid incomplete session bias
+          const dvol = dV.slice(-Math.min(20, dV.length - 1), -1);
+          avgVol20 = dvol.reduce((a, b) => a + b, 0) / Math.max(1, dvol.length);
+        } else if (dV.length === 1) {
+          avgVol20 = dV[0];
+        }
+        const volRatio = avgVol20 > 0 ? (totalVol / avgVol20) : 0;
+
+        // Daily Technical Calculations
+        let dailyRsi = rsi;
+        let dailyEmaTrend = 'Neutral';
+        let dailyEmaClass = 'amber';
+        let dailyEmaLogic = 'Insufficient daily historical data to compute EMAs.';
+
+        if (dailyJson && dailyJson.chart.result[0].indicators.quote[0]) {
+          if (dC.length >= 14) {
+            dailyRsi = calcRSI(dC, 14);
+          }
+
+          if (dC.length >= 200) {
+            const ema100 = calcEMA(dC, 100);
+            const ema200 = calcEMA(dC, 200);
+
+            if (ltp > ema100 && ltp > ema200 && ema100 > ema200) {
+              dailyEmaTrend = 'Strong Uptrend';
+              dailyEmaClass = 'green';
+              dailyEmaLogic = 'Price is trading above both 100-day and 200-day EMAs, with 100 EMA > 200 EMA (Bullish structure).';
+            } else if (ltp < ema100 && ltp < ema200 && ema100 < ema200) {
+              dailyEmaTrend = 'Strong Downtrend';
+              dailyEmaClass = 'red';
+              dailyEmaLogic = 'Price is trading below both 100-day and 200-day EMAs, with 100 EMA < 200 EMA (Bearish structure).';
+            } else if (ema100 > ema200) {
+              dailyEmaTrend = 'Weak Uptrend / Pullback';
+              dailyEmaClass = 'amber';
+              dailyEmaLogic = 'Long-term structure is bullish (100 EMA > 200 EMA), but price is undergoing a short-term pullback.';
+            } else {
+              dailyEmaTrend = 'Consolidation / Neutral';
+              dailyEmaClass = 'amber';
+              dailyEmaLogic = 'EMAs are flat or overlapping, indicating a range-bound market structure.';
+            }
+          } else {
+            const ema20 = calcEMA(dC, 20);
+            const ema50 = calcEMA(dC, 50);
+            if (ema20 > ema50) {
+              dailyEmaTrend = 'Bullish (20/50 Daily)';
+              dailyEmaClass = 'green';
+              dailyEmaLogic = 'Short-term daily EMA (20) is above medium-term daily EMA (50).';
+            } else {
+              dailyEmaTrend = 'Bearish (20/50 Daily)';
+              dailyEmaClass = 'red';
+              dailyEmaLogic = 'Short-term daily EMA (20) is below medium-term daily EMA (50).';
+            }
+          }
+        }
+
+        // Intraday Verdict Scores (Dynamic Bullish/Bearish Direction)
+        let bullishScore = 0;
+        let bearishScore = 0;
+
+        // 1. VWAP Check
+        if (ltp >= vwap) bullishScore++; else bearishScore++;
+        // 2. EMA Cross Check
+        if (ema20 > ema50) bullishScore++; else bearishScore++;
+        // 3. RSI momentum check
+        if (rsi >= 45) bullishScore++;
+        if (rsi <= 55) bearishScore++;
+        // 4. Pivot Point Check
+        if (ltp >= PP) bullishScore++; else bearishScore++;
+        // 5. Volume Confirmation Check
+        if (volRatio >= 1.0) { bullishScore++; bearishScore++; }
+
+        let verdictVal, verdictClass, verdictLogic, intraDirection;
+        if (bullishScore >= 4) {
+          verdictVal = `STRONG LONG (${bullishScore}/5)`;
+          verdictClass = 'green';
+          verdictLogic = 'High probability setup. Market structure, trend alignment, momentum, and volume parameters validate a long entry.';
+          intraDirection = 'Long';
+        } else if (bearishScore >= 4) {
+          verdictVal = `STRONG SHORT (${bearishScore}/5)`;
+          verdictClass = 'red';
+          verdictLogic = 'High probability short setup. Downward structure, bearish EMAs, weak RSI momentum, and volume parameters validate a short entry.';
+          intraDirection = 'Short';
+        } else {
+          verdictVal = `NEUTRAL / WAIT (${bullishScore}L / ${bearishScore}S)`;
+          verdictClass = 'amber';
+          verdictLogic = 'Mixed technical signals. Wait for a clear breakout above resistance, a bounce from support, or increased volume before entering.';
+          intraDirection = bullishScore >= bearishScore ? 'Long' : 'Short';
+        }
+
+        // Daily Verdict Scores (Dynamic Bullish/Bearish Direction)
+        let dailyBullishScore = 0;
+        let dailyBearishScore = 0;
+
+        // 1. VWAP Check (Daily baseline)
+        if (ltp >= vwap) dailyBullishScore++; else dailyBearishScore++;
+        // 2. EMA Trend Check
+        if (dailyEmaTrend === 'Strong Uptrend' || dailyEmaTrend === 'Bullish (20/50 Daily)') dailyBullishScore++;
+        if (dailyEmaTrend === 'Strong Downtrend' || dailyEmaTrend === 'Bearish (20/50 Daily)') dailyBearishScore++;
+        // 3. RSI check
+        if (dailyRsi >= 45) dailyBullishScore++;
+        if (dailyRsi <= 55) dailyBearishScore++;
+        // 4. Pivot Point Check
+        if (ltp >= PP) dailyBullishScore++; else dailyBearishScore++;
+        // 5. Volume Confirmation Check
+        if (volRatio >= 1.0) { dailyBullishScore++; dailyBearishScore++; }
+
+        let dailyVerdictVal, dailyVerdictClass, dailyVerdictLogic, dailyDirection;
+        if (dailyBullishScore >= 4) {
+          dailyVerdictVal = `STRONG LONG (${dailyBullishScore}/5)`;
+          dailyVerdictClass = 'green';
+          dailyVerdictLogic = 'High probability daily setup. Market structure, daily trend alignment, daily momentum, and volume parameters validate a long entry.';
+          dailyDirection = 'Long';
+        } else if (dailyBearishScore >= 4) {
+          dailyVerdictVal = `STRONG SHORT (${dailyBearishScore}/5)`;
+          dailyVerdictClass = 'red';
+          dailyVerdictLogic = 'High probability daily short setup. Bearish daily structure, EMAs, momentum, and volume validate a short entry.';
+          dailyDirection = 'Short';
+        } else {
+          dailyVerdictVal = `NEUTRAL / WAIT (${dailyBullishScore}L / ${dailyBearishScore}S)`;
+          dailyVerdictClass = 'amber';
+          dailyVerdictLogic = 'Mixed daily technical signals. Wait for a breakout above daily resistance or daily EMA stabilization.';
+          dailyDirection = dailyBullishScore >= dailyBearishScore ? 'Long' : 'Short';
+        }
+
+        // Dynamic Trade Levels calculations based on trade direction
+        const intraSl = intraDirection === 'Short' ? ltp + 1.5 * atr : ltp - 1.5 * atr;
+        const intraT1 = intraDirection === 'Short' ? ltp - 1.5 * atr : ltp + 1.5 * atr;
+        const intraT2 = intraDirection === 'Short' ? ltp - 2.5 * atr : ltp + 2.5 * atr;
+        const intraRr = intraDirection === 'Short'
+          ? ((intraSl - ltp) > 0 ? ((ltp - intraT2) / (intraSl - ltp)) : 0)
+          : ((ltp - intraSl) > 0 ? ((intraT2 - ltp) / (ltp - intraSl)) : 0);
+
+        const dailySl = dailyDirection === 'Short' ? ltp + 1.5 * dailyAtr : ltp - 1.5 * dailyAtr;
+        const dailyT1 = dailyDirection === 'Short' ? ltp - 1.5 * dailyAtr : ltp + 1.5 * dailyAtr;
+        const dailyT2 = dailyDirection === 'Short' ? ltp - 2.5 * dailyAtr : ltp + 2.5 * dailyAtr;
+        const dailyRr = dailyDirection === 'Short'
+          ? ((dailySl - ltp) > 0 ? ((ltp - dailyT2) / (dailySl - ltp)) : 0)
+          : ((ltp - dailySl) > 0 ? ((dailyT2 - ltp) / (ltp - dailySl)) : 0);
+
+        // --- TIER 1 INDICATORS: GAP, FIBONACCI, MACD, SUPERTREND, BB, ADX ---
+        // Gap Analysis
+        const gap = dayOpen - prevClose;
+        const gapPct = prevClose > 0 ? (gap / prevClose * 100) : 0;
+        const gapClass = gapPct > 0.5 ? 'green' : gapPct < -0.5 ? 'red' : 'white';
+        const gapLabel = gapPct > 0.5 ? 'Gap Up' : gapPct < -0.5 ? 'Gap Down' : 'Flat Open';
+        const gapLogic = gapPct > 0.5
+          ? `Stock opened ${gapPct.toFixed(2)}% above previous close. Bullish gap — early buyers have the advantage. Watch for gap-fill pullback to ₹${fmt(prevClose)}.`
+          : gapPct < -0.5
+            ? `Stock opened ${Math.abs(gapPct).toFixed(2)}% below previous close. Bearish gap — sellers in control from the open. Watch for gap-fill recovery to ₹${fmt(prevClose)}.`
+            : `Stock opened within 0.5% of previous close (₹${fmt(prevClose)}). No significant gap — price discovery ongoing.`;
+
+        // Fibonacci Retracement (from previous session's confirmed High/Low)
+        const fibRange = prevH - prevL;
+        const fib236 = prevL + 0.236 * fibRange;
+        const fib382 = prevL + 0.382 * fibRange;
+        const fib500 = prevL + 0.500 * fibRange;
+        const fib618 = prevL + 0.618 * fibRange;
+        const fib786 = prevL + 0.786 * fibRange;
+
+        // 5M Indicators: MACD, Supertrend, Bollinger Bands, ADX
+        const intraMACD = calcMACD(close);
+        const intraST = calcSupertrend(high, low, close, 10, 3);
+        const intraBB = calcBollingerBands(close, 20);
+        const intraADX = calcADX(high, low, close, 14);
+
+        // Daily Indicators: MACD, Supertrend, Bollinger Bands, ADX
+        let dailyMACD = { macd: 0, signal: 0, histogram: 0 };
+        let dailyST = { value: ltp, direction: 'Neutral' };
+        let dailyBB = { upper: 0, middle: 0, lower: 0, width: 0, pctB: 50 };
+        let dailyADXData = { adx: 0, plusDI: 0, minusDI: 0 };
+        if (dailyJson && dC.length >= 30) {
+          dailyMACD = calcMACD(dC);
+          dailyST = calcSupertrend(dH, dL, dC, 10, 3);
+          dailyBB = calcBollingerBands(dC, 20);
+          dailyADXData = calcADX(dH, dL, dC, 14);
+        }
+
+        // --- 3-DAY VOLATILITY RISK CONE PROJECTION ---
+        const now = new Date();
+        const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+
+        let projectionTableRows = '';
+        let daysAdded = 0;
+        let currentIterDate = new Date(istTime);
+        let validTradingDays = 1; // Used for Square Root of Time calculation
+
+        while (daysAdded < 3) {
+          const dayOfWeek = currentIterDate.getDay();
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            const dateStr = currentIterDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+
+            let label = dateStr;
+            if (daysAdded === 0) label = `Today (${dateStr})`;
+
+            // Random Walk Volatility Cone: scales by the square root of time
+            const expectedMove = dailyAtr * Math.sqrt(validTradingDays);
+            const expectedHigh = ltp + expectedMove;
+            const expectedLow = ltp - expectedMove;
+
+            let logicText = `There is a 68% statistical probability (1 Std Dev) that price remains inside this cone.`;
+            if (daysAdded === 0) logicText = `Current session boundaries. Expected to trade within 1x ATR.`;
+
+            projectionTableRows += tRow(
+              label,
+              `<span class="green">High: ₹${fmt(expectedHigh)}</span><br><span class="red">Low: ₹${fmt(expectedLow)}</span>`,
+              '',
+              logicText
+            );
+
+            validTradingDays++;
+            daysAdded++;
+          }
+          currentIterDate.setDate(currentIterDate.getDate() + 1);
+        }
+
+        const changeClass = change >= 0 ? 'green' : 'red';
+        const changeSign = change >= 0 ? '+' : '';
+
+        let volLogic = `Normal volume (${volRatio.toFixed(1)}x avg). Standard market participation.`;
+        let volClass = 'white';
+        if (volRatio >= 1.0) { volLogic = `Healthy volume (${volRatio.toFixed(1)}x avg). Active institutional participation detected.`; volClass = 'green'; }
+        if (volRatio < 0.5) { volLogic = `Low volume (${volRatio.toFixed(1)}x avg). Prone to erratic spikes or false breakouts.`; volClass = 'red'; }
+
+        let rsiLogic = "Momentum is healthy. Asset is gaining strength without being overvalued.";
+        let rsiClass = 'green';
+        if (rsi > 70) { rsiLogic = "Asset is currently overbought. High risk of a short-term pullback."; rsiClass = 'amber'; }
+        if (rsi < 40) { rsiLogic = "Bearish momentum or oversold. Weak conditions for a long entry."; rsiClass = 'red'; }
+
+        let dailyRsiLogic = "Momentum is healthy. Daily chart shows strength without being overvalued.";
+        let dailyRsiClass = 'green';
+        if (dailyRsi > 70) { dailyRsiLogic = "Daily RSI is overbought (>70). High risk of long-term exhaustion."; dailyRsiClass = 'amber'; }
+        if (dailyRsi < 40) { dailyRsiLogic = "Daily RSI is bearish (<40), indicating clear downtrend momentum."; dailyRsiClass = 'red'; }
+
+        // Dynamic Zone-based Pivot Trade Levels for Daily (1D) Strategy
+        let pivotLongTrigger, pivotLongSl, pivotLongT1, pivotLongT2;
+        const rRange = R3 - R2; // Range unit for levels beyond standard pivots
+
+        if (ltp < PP) {
+          pivotLongTrigger = PP;
+          pivotLongSl = S1;
+          pivotLongT1 = R1;
+          pivotLongT2 = R2;
+        } else if (ltp >= PP && ltp < R1) {
+          pivotLongTrigger = R1;
+          pivotLongSl = PP;
+          pivotLongT1 = R2;
+          pivotLongT2 = R3;
+        } else if (ltp >= R1 && ltp < R2) {
+          pivotLongTrigger = R2;
+          pivotLongSl = R1;
+          pivotLongT1 = R3;
+          pivotLongT2 = R3 + rRange;
+        } else {
+          // ltp >= R2
+          pivotLongTrigger = R3;
+          pivotLongSl = R2;
+          pivotLongT1 = R3 + rRange;
+          pivotLongT2 = R3 + 2 * rRange;
+        }
+        const pivotLongRr = (pivotLongTrigger - pivotLongSl) > 0 ? (pivotLongT2 - pivotLongTrigger) / (pivotLongTrigger - pivotLongSl) : 1.67;
+
+        let pivotShortTrigger, pivotShortSl, pivotShortT1, pivotShortT2;
+        const sRange = S2 - S3; // Range unit for levels beyond standard pivots
+
+        if (ltp > PP) {
+          pivotShortTrigger = PP;
+          pivotShortSl = R1;
+          pivotShortT1 = S1;
+          pivotShortT2 = S2;
+        } else if (ltp <= PP && ltp > S1) {
+          pivotShortTrigger = S1;
+          pivotShortSl = PP;
+          pivotShortT1 = S2;
+          pivotShortT2 = S3;
+        } else if (ltp <= S1 && ltp > S2) {
+          pivotShortTrigger = S2;
+          pivotShortSl = S1;
+          pivotShortT1 = S3;
+          pivotShortT2 = S3 - sRange;
+        } else {
+          // ltp <= S2
+          pivotShortTrigger = S3;
+          pivotShortSl = S2;
+          pivotShortT1 = S3 - sRange;
+          pivotShortT2 = S3 - 2 * sRange;
+        }
+        const pivotShortRr = (pivotShortSl - pivotShortTrigger) > 0 ? (pivotShortTrigger - pivotShortT2) / (pivotShortSl - pivotShortTrigger) : 1.67;
+
+        // Populate global state
+        activeStockData = {
+          ltp, totalVol, volRatio,
+          fiftyTwoWeekHigh, fiftyTwoWeekLow,
+          gap: { amount: gap, pct: gapPct, label: gapLabel, cls: gapClass, logic: gapLogic },
+          fib: { high: prevH, low: prevL, f236: fib236, f382: fib382, f500: fib500, f618: fib618, f786: fib786 },
+          pivots: { PP, R1, S1, R2, S2, R3, S3, R4, R5, R6, S4, S5, S6, high: dayHigh, low: dayLow },
+          intra: {
+            vwap,
+            emaTrend: ema20 > ema50 ? 'Bullish' : 'Bearish',
+            emaClass: ema20 > ema50 ? 'green' : 'red',
+            emaLogic: ema20 > ema50 ? 'Short-term (20 EMA) is above medium-term (50 EMA) on the 5M chart, confirming an uptrend.' : 'Short-term (20 EMA) is below medium-term (50 EMA) on the 5M chart, indicating a downtrend.',
+            rsi, rsiClass, rsiLogic,
+            atr, atrLogic: `Average 5-minute candle volatility is ~₹${fmt(atr)}. Expect normal price swings of this size.`,
+            volClass, volLogic,
+            macd: intraMACD,
+            supertrend: intraST,
+            bb: intraBB,
+            adx: intraADX,
+            tradeLevels: {
+              verdictVal, verdictClass, verdictLogic, direction: intraDirection,
+              long: { trigger: ltp + 0.5 * atr, sl: ltp - 1.0 * atr, t1: ltp + 2.0 * atr, t2: ltp + 3.0 * atr, rr: 1.67 },
+              short: { trigger: ltp - 0.5 * atr, sl: ltp + 1.0 * atr, t1: ltp - 2.0 * atr, t2: ltp - 3.0 * atr, rr: 1.67 }
+            }
+          },
+          daily: {
+            vwap,
+            emaTrend: dailyEmaTrend, emaClass: dailyEmaClass, emaLogic: dailyEmaLogic,
+            rsi: dailyRsi, rsiClass: dailyRsiClass, rsiLogic: dailyRsiLogic,
+            atr: dailyAtr, atrLogic: `Average daily volatility is ~₹${fmt(dailyAtr)}. Standard daily price range.`,
+            volClass, volLogic,
+            macd: dailyMACD,
+            supertrend: dailyST,
+            bb: dailyBB,
+            adx: dailyADXData,
+            tradeLevels: {
+              verdictVal: dailyVerdictVal, verdictClass: dailyVerdictClass, verdictLogic: dailyVerdictLogic, direction: dailyDirection,
+              long: { trigger: pivotLongTrigger, sl: pivotLongSl, t1: pivotLongT1, t2: pivotLongT2, rr: pivotLongRr },
+              short: { trigger: pivotShortTrigger, sl: pivotShortSl, t1: pivotShortT1, t2: pivotShortT2, rr: pivotShortRr }
+            }
+          }
+        };
+
+        // Dynamic labels and descriptions for daily pivots based on price polarity
+        const r3Label = ltp >= R3 ? 'R3 Support (Broken)' : 'Resistance 3';
+        const r3Class = ltp >= R3 ? 'green' : 'red';
+        const r3Desc = ltp >= R3 ? 'Broken resistance. Expected to act as support on pullbacks (polarity swap).' : 'Extreme structural ceiling. Indicates massive bullish momentum if breached.';
+
+        const r2Label = ltp >= R2 ? 'R2 Support (Broken)' : 'Resistance 2';
+        const r2Class = ltp >= R2 ? 'green' : 'red';
+        const r2Desc = ltp >= R2 ? 'Broken resistance. Expected to act as support on pullbacks (polarity swap).' : 'Secondary ceiling. Common profit-taking zone in an uptrend.';
+
+        const r1Label = ltp >= R1 ? 'R1 Support (Broken)' : 'Resistance 1';
+        const r1Class = ltp >= R1 ? 'green' : 'red';
+        const r1Desc = ltp >= R1 ? 'Broken resistance. Expected to act as support on pullbacks (polarity swap).' : 'Primary resistance. The first major hurdle where selling pressure generally increases.';
+
+        const s1Label = ltp <= S1 ? 'S1 Resist (Broken)' : 'Support 1';
+        const s1Class = ltp <= S1 ? 'red' : 'green';
+        const s1Desc = ltp <= S1 ? 'Broken support floor. Expected to act as resistance on rallies (polarity swap).' : 'Primary support. The first major floor where buyers are expected to step in.';
+
+        const s2Label = ltp <= S2 ? 'S2 Resist (Broken)' : 'Support 2';
+        const s2Class = ltp <= S2 ? 'red' : 'green';
+        const s2Desc = ltp <= S2 ? 'Broken support floor. Expected to act as resistance on rallies (polarity swap).' : 'Secondary support. Acts as a strong historical bounce zone.';
+
+        const s3Label = ltp <= S3 ? 'S3 Resist (Broken)' : 'Support 3';
+        const s3Class = ltp <= S3 ? 'red' : 'green';
+        const s3Desc = ltp <= S3 ? 'Broken support floor. Expected to act as resistance on rallies (polarity swap).' : 'Extreme floor. Indicates massive selling pressure if price falls below this line.';
+
+        let fvDesc = 'Daily equilibrium zone based on VWAP and daily volatility. Price tends to revert to this channel.';
+        if (ltp > fvUpper) {
+          fvDesc = 'Daily equilibrium zone based on VWAP and daily volatility. Price is currently trading ABOVE this range (Bullish Expansion).';
+        } else if (ltp < fvLower) {
+          fvDesc = 'Daily equilibrium zone based on VWAP and daily volatility. Price is currently trading BELOW this range (Bearish Expansion).';
+        }
+
+        statusEl.style.display = 'none';
+
+        outputEl.innerHTML = `
+      <div class="report-header">
+        <div class="ticker-info">
+          <h2>${sym}</h2>
+          <span>${fullName} &nbsp;|&nbsp; ${exchange}</span>
+        </div>
+        <div class="price-info">
+          <div class="ltp ${changeClass}">₹${fmt(ltp)}</div>
+          <div class="change ${changeClass}">${changeSign}${change.toFixed(2)}%</div>
+        </div>
+      </div>
+
+      <div class="session-grid">
+        <div><span class="lbl">Open</span><span class="val">₹${fmt(dayOpen)}</span></div>
+        <div><span class="lbl">High</span><span class="val green">₹${fmt(dayHigh)}</span></div>
+        <div><span class="lbl">Low</span><span class="val red">₹${fmt(dayLow)}</span></div>
+        <div><span class="lbl">Prev Close</span><span class="val">₹${fmt(prevClose)}</span></div>
+        <div><span class="lbl">Gap</span><span class="val ${gapClass}">${gapPct >= 0 ? '+' : ''}${gapPct.toFixed(2)}% &nbsp;<small style="font-size:10px;font-weight:500;">${gapLabel}</small></span></div>
+        <div><span class="lbl">Upper Circuit (${circuitLimitPct}%)</span><span class="val green">₹${fmt(upperCircuit)}</span></div>
+        <div><span class="lbl">Lower Circuit (${circuitLimitPct}%)</span><span class="val red">₹${fmt(lowerCircuit)}</span></div>
+        <div><span class="lbl">52W High</span><span class="val green">₹${fmt(fiftyTwoWeekHigh)}</span></div>
+        <div><span class="lbl">52W Low</span><span class="val red">₹${fmt(fiftyTwoWeekLow)}</span></div>
+      </div>
+
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-analysis', this)">Technical Analysis</button>
+        <button class="tab-btn" onclick="switchTab('tab-volatility', this)">Volatility Projection <span class="badge-experimental">Experimental</span></button>
+      </div>
+
+      <div id="tab-analysis" class="tab-content active">
+        <h3>Indicators & Technical Verdict</h3>
+        
+        <div class="timeframe-toggle-container">
+          <span>Strategy &amp; Timeframe:</span>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="tf-1d" onclick="setTimeframe('1d')">Day Trade &middot; Pivots (1D)</button>
+            <button class="toggle-btn" id="tf-5m" onclick="setTimeframe('5m')">Scalp &middot; ATR (5M)</button>
+          </div>
+        </div>
+
+        <table>
+          <tbody id="indicators-table-body">
+            <!-- Dynamic timeframe indicator table rows injected here -->
+          </tbody>
+        </table>
+
+        <h3>Market Structure (SMC Daily Pivots)</h3>
+        <table class="three-col-table">
+          <thead>
+            <tr>
+              <th class="col-metric">Level</th>
+              <th class="col-value">Value</th>
+              <th class="col-logic">Market Structure Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tRow('Resist Ext (R4/5/6)', `₹${fmt(R4)} · ₹${fmt(R5)} · ₹${fmt(R6)}`, 'red', 'Macro breakout extension levels. Volatility targets for extreme trend days.')}
+            ${tRow(r3Label, `₹${fmt(R3)}`, r3Class, r3Desc)}
+            ${tRow(r2Label, `₹${fmt(R2)}`, r2Class, r2Desc)}
+            ${tRow(r1Label, `₹${fmt(R1)}`, r1Class, r1Desc)}
+            ${tRow('Pivot Point', `₹${fmt(PP)}`, 'amber', ltp >= PP ? 'Currently trading above the central pivot. The structural advantage belongs to buyers.' : 'Currently trading below the central pivot. The structural advantage belongs to sellers.')}
+            ${tRow('Daily Value Area (DVA)', `₹${fmt(fvLower)} - ₹${fmt(fvUpper)}`, 'blue', fvDesc)}
+            ${tRow(s1Label, `₹${fmt(S1)}`, s1Class, s1Desc)}
+            ${tRow(s2Label, `₹${fmt(S2)}`, s2Class, s2Desc)}
+            ${tRow(s3Label, `₹${fmt(S3)}`, s3Class, s3Desc)}
+            ${tRow('Support Ext (S4/5/6)', `₹${fmt(S4)} · ₹${fmt(S5)} · ₹${fmt(S6)}`, 'green', 'Macro breakdown extension levels. Volatility floors for extreme dump days.')}
+          </tbody>
+        </table>
+
+        <h3>Actionable Trade Levels Matrix</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 15%;">Direction</th>
+              <th style="width: 25%;">Entry Trigger</th>
+              <th style="width: 15%;">Stop Loss (SL)</th>
+              <th style="width: 15%;">Target 1</th>
+              <th style="width: 15%;">Target 2</th>
+              <th style="width: 15%;">Risk : Reward</th>
+            </tr>
+          </thead>
+          <tbody id="trade-levels-table-body">
+            <!-- Dynamic timeframe trade levels rows injected here -->
+          </tbody>
+        </table>
+
+        <h3>Fibonacci Retracement (Prev Session: ₹${fmt(activeStockData.fib.low)} – ₹${fmt(activeStockData.fib.high)})</h3>
+        <table class="three-col-table">
+          <thead>
+            <tr>
+              <th class="col-metric">Level</th>
+              <th class="col-value">Price</th>
+              <th class="col-logic">Retracement Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tRow('100% (Prev High)', `₹${fmt(activeStockData.fib.high)}`, 'red', 'Full extension — previous session high. Breakout above signals continuation.')}
+            ${tRow('23.6% Retracement', `₹${fmt(activeStockData.fib.f786)}`, 'red', 'Very shallow retracement. Indicates strong momentum — trend likely intact.')}
+            ${tRow('38.2% Retracement', `₹${fmt(activeStockData.fib.f618)}`, 'amber', 'Shallow retracement — typical pullback in a strong trend. Common scalp entry zone.')}
+            ${tRow('50.0% Retracement', `₹${fmt(activeStockData.fib.f500)}`, 'amber', 'Mid-point of the previous session range. Neutral inflection zone — price often pauses here.')}
+            ${tRow('61.8% Retracement', `₹${fmt(activeStockData.fib.f382)}`, 'green', 'Golden ratio — strongest retracement level. High-probability reversal or continuation zone.')}
+            ${tRow('78.6% Retracement', `₹${fmt(activeStockData.fib.f236)}`, 'green', 'Deep retracement zone. Often final defence before trend reversal.')}
+            ${tRow('0% (Prev Low)', `₹${fmt(activeStockData.fib.low)}`, 'green', 'Full retracement — previous session low. Breakdown below signals bearish continuation.')}
+          </tbody>
+        </table>
+
+        <div class="info-box" style="border-left-color: #fbbf24; margin-top: 15px; margin-bottom: 25px;">
+          <h4>Trading Guide: Key Fibonacci Retracement Levels</h4>
+          <p>Traders use Fibonacci retracements to identify key potential support/resistance inflection zones during pullbacks:</p>
+          <ul>
+            <li><strong>61.8% (The Golden Ratio):</strong> The most critical retracement level. Pullbacks holding above 61.8% are high-conviction continuation setups (strong bounce/rebound areas). A confirmed breach below 61.8% indicates the current trend is failing and a trend reversal is imminent.</li>
+            <li><strong>38.2% & 50.0% (Standard Pullbacks):</strong> Shallow to moderate retracement zones. In strong, high-velocity trends, pullbacks rarely go deeper than 38.2% or 50%. Watch for price stabilization or candlestick reversal patterns (e.g., hammers) at these levels for momentum re-entry.</li>
+            <li><strong>78.6% (Last Line of Defense):</strong> Deep retracement level. This is the final boundary to protect the prior trend structure. If the price fails to hold here, a full trend failure/complete reversal to the 100% retracement (or prior session extreme) is highly likely.</li>
+          </ul>
+          
+          <h5 style="margin: 18px 0 8px 0; color: #fbbf24; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🔥 High-Conviction Fibonacci Retracement Formulas</h5>
+          <div class="fib-formulas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
+            <div style="background: #1f2937; padding: 12px; border-radius: 4px; border-left: 3px solid #10b981;">
+              <h6 style="margin: 0 0 6px 0; color: #10b981; font-size: 12px; text-transform: uppercase;">BULLISH (LONG) SETUP</h6>
+              <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #e5e7eb;"><b>Buy Zone (38.2% - 61.8% Pullback):</b> ₹${fmt(activeStockData.fib.f618)} – ₹${fmt(activeStockData.fib.f382)}</p>
+              <p style="margin: 0 0 8px 0; font-size: 11px; color: #9ca3af; line-height: 1.4;">Wait for price to pull back into this zone, look for a bullish hammer/pin-bar close on 5m chart, then enter long.</p>
+              <p style="margin: 0; font-size: 11px; color: #f87171;"><b>Stop Loss:</b> Below ₹${fmt(activeStockData.fib.f236)} &nbsp;|&nbsp; <b>Target 1:</b> ₹${fmt(activeStockData.fib.high)}</p>
+            </div>
+            <div style="background: #1f2937; padding: 12px; border-radius: 4px; border-left: 3px solid #ef4444;">
+              <h6 style="margin: 0 0 6px 0; color: #ef4444; font-size: 12px; text-transform: uppercase;">BEARISH (SHORT) SETUP</h6>
+              <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #e5e7eb;"><b>Sell Zone (38.2% - 61.8% Pullback):</b> ₹${fmt(activeStockData.fib.f382)} – ₹${fmt(activeStockData.fib.f618)}</p>
+              <p style="margin: 0 0 8px 0; font-size: 11px; color: #9ca3af; line-height: 1.4;">Wait for price to bounce up into this zone, look for a shooting star/bearish engulfing close on 5m chart, then enter short.</p>
+              <p style="margin: 0; font-size: 11px; color: #34d399;"><b>Stop Loss:</b> Above ₹${fmt(activeStockData.fib.f786)} &nbsp;|&nbsp; <b>Target 1:</b> ₹${fmt(activeStockData.fib.low)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-volatility" class="tab-content">
+        <h3>Statistical 3-Day Risk Cone (Volatility Projection)</h3>
+        <table class="three-col-table">
+          <thead>
+            <tr>
+              <th class="col-metric">Date</th>
+              <th class="col-value">Expected High & Low</th>
+              <th class="col-logic">Predictive Logic & Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${projectionTableRows}
+          </tbody>
+        </table>
+        
+        <div class="info-box" style="border-left-color: #fbbf24; margin-top: 20px;">
+          <h4>🧪 Experimental Model Disclaimer</h4>
+          <p>The Volatility Projection uses mathematical Average True Range (ATR) parameters scaled over time using the <b>Square Root of Time</b> rule (Random Walk model). It represents standard deviation-based boundaries (1 Std Dev / ~68% confidence interval).</p>
+          <p style="color: #f87171; font-weight: 600; margin-top: 12px; margin-bottom: 0;">⚠️ Disclaimer: Projections are purely theoretical and do not guarantee actual outcome. Never use volatility cones as standalone financial signals.</p>
+        </div>
+      </div>
+
+      <div class="footer-warning">
+        ${getMarketStatusHTML()}
+      </div>
+    `;
+
+        setTimeframe(selectedTimeframe);
+
+      } catch (e) {
+        statusEl.style.display = 'block';
+        statusEl.className = 'error';
+        statusEl.innerHTML = `Error: ${e.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Run Analysis';
+      }
+    }
+
+    // Parse query parameters on load to auto-load a stock
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const symbol = params.get('symbol') || params.get('sym');
+      if (symbol) {
+        document.getElementById('sym').value = symbol.trim().toUpperCase();
+        fetchStock();
+      }
+    });
+  </script>
+</body>
+
+</html>
