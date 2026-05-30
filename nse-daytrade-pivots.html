@@ -544,6 +544,130 @@
       }
     }
 
+    let selectedFibAnchor = 'session';
+
+    function setFibAnchor(anchor) {
+      if (!activeStockData) return;
+      selectedFibAnchor = anchor;
+
+      // Update toggle active class
+      document.querySelectorAll('.toggle-btn').forEach(btn => {
+        if (btn.id.startsWith('fib-anchor-')) btn.classList.remove('active');
+      });
+      const activeBtn = document.getElementById(`fib-anchor-${anchor}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const titleEl = document.getElementById('fib-table-title');
+      const bodyEl = document.getElementById('fib-table-body');
+      const guideEl = document.getElementById('fib-guide-container');
+      const descEl = document.getElementById('fib-description-text');
+
+      if (descEl) {
+        descEl.innerHTML = anchor === 'session'
+          ? `<b>Session Range (Micro):</b> Fibonacci retracements calculated from the high and low range of the most recent completed trading session. Utilized by intraday traders to identify short-term support, resistance, and short-covering pivot zones.`
+          : `<b>52-Week Range (Macro):</b> Fibonacci retracements calculated from the structural 52-week high and low range. Utilized by swing and position traders to locate key institutional supply/demand blocks and long-term trend reversals.`;
+      }
+
+      if (titleEl && bodyEl) {
+        const low = anchor === 'session' ? activeStockData.fib.low : activeStockData.fiftyTwoWeekLow;
+        const high = anchor === 'session' ? activeStockData.fib.high : activeStockData.fiftyTwoWeekHigh;
+        
+        titleEl.innerHTML = `Fibonacci Retracement (${anchor === 'session' ? 'Previous Session' : '52-Week Range'}: ₹${fmt(low)} – ₹${fmt(high)})`;
+        bodyEl.innerHTML = getFibTableHTML(anchor);
+        
+        if (guideEl) {
+          guideEl.innerHTML = getFibGuideHTML(anchor);
+        }
+      }
+    }
+
+    function getFibTableHTML(anchor) {
+      if (!activeStockData) return '';
+      const low = anchor === 'session' ? activeStockData.fib.low : activeStockData.fiftyTwoWeekLow;
+      const high = anchor === 'session' ? activeStockData.fib.high : activeStockData.fiftyTwoWeekHigh;
+      const range = high - low;
+
+      // Calculate levels measured as rebounds upward from low
+      const f236 = low + 0.236 * range;
+      const f382 = low + 0.382 * range;
+      const f500 = low + 0.500 * range;
+      const f618 = low + 0.618 * range;
+      const f786 = low + 0.786 * range;
+
+      return `
+        <tr>
+          <td class="col-metric">0% (${anchor === 'session' ? 'Prev' : '52W'} Low)</td>
+          <td class="col-value num-mono green">₹${fmt(low)}</td>
+          <td class="col-logic">Structural floor. Breakdown below confirms a trend invalidation.</td>
+        </tr>
+        <tr>
+          <td class="col-metric">23.6% Retracement</td>
+          <td class="col-value num-mono green">₹${fmt(f236)}</td>
+          <td class="col-logic">Deep retracement support (76.4% pullback from high) or initial rebound target in a short-covering rally.</td>
+        </tr>
+        <tr>
+          <td class="col-metric">38.2% Retracement</td>
+          <td class="col-value num-mono amber">₹${fmt(f382)}</td>
+          <td class="col-logic">Moderate support (61.8% pullback from high) or standard breakout resistance level.</td>
+        </tr>
+        <tr>
+          <td class="col-metric">50.0% Retracement</td>
+          <td class="col-value num-mono amber">₹${fmt(f500)}</td>
+          <td class="col-logic">Equilibrium pivot. Mid-point of the range where price frequently consolidates.</td>
+        </tr>
+        <tr>
+          <td class="col-metric">61.8% Retracement</td>
+          <td class="col-value num-mono red">₹${fmt(f618)}</td>
+          <td class="col-logic">The Golden Ratio. High-conviction support (38.2% pullback from high) or breakout resistance hurdle.</td>
+        </tr>
+        <tr>
+          <td class="col-metric">78.6% Retracement</td>
+          <td class="col-value num-mono red">₹${fmt(f786)}</td>
+          <td class="col-logic">Shallow retracement support (21.4% pullback from high) or final defensive zone for sellers.</td>
+        </tr>
+        <tr>
+          <td class="col-metric">100% (${anchor === 'session' ? 'Prev' : '52W'} High)</td>
+          <td class="col-value num-mono red">₹${fmt(high)}</td>
+          <td class="col-logic">Structural ceiling. Breakout above signals trend extension.</td>
+        </tr>
+      `;
+    }
+
+    function getFibGuideHTML(anchor) {
+      if (!activeStockData) return '';
+      const low = anchor === 'session' ? activeStockData.fib.low : activeStockData.fiftyTwoWeekLow;
+      const high = anchor === 'session' ? activeStockData.fib.high : activeStockData.fiftyTwoWeekHigh;
+      const range = high - low;
+
+      // Calculate levels measured as rebounds upward from low
+      const f236 = low + 0.236 * range;
+      const f382 = low + 0.382 * range;
+      const f618 = low + 0.618 * range;
+      const f786 = low + 0.786 * range;
+
+      const isSession = anchor === 'session';
+      const timeframeLabel = isSession ? '5m / 15m intraday chart' : 'daily / weekly chart';
+      const targetLabel = isSession ? 'intraday target (e.g., session high/low)' : 'swing target (e.g., major resistance/support)';
+
+      return `
+        <h5 style="margin: 18px 0 8px 0; color: #fbbf24; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">High-Conviction Fibonacci Retracement Formulas (${isSession ? 'Micro Day Trading' : 'Macro Swing Trading'})</h5>
+        <div class="fib-formulas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
+          <div style="background: #1f2937; padding: 12px; border-radius: 4px; border-left: 3px solid #10b981;">
+            <h6 style="margin: 0 0 6px 0; color: #10b981; font-size: 12px; text-transform: uppercase;">BULLISH (LONG) SETUP</h6>
+            <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #e5e7eb;"><b>Buy Zone (38.2% - 61.8% Pullback):</b> ₹${fmt(f618)} – ₹${fmt(f382)}</p>
+            <p style="margin: 0 0 8px 0; font-size: 11px; color: #9ca3af; line-height: 1.4;">Wait for price to pull back into this zone, look for a bullish candlestick close on the <b>${timeframeLabel}</b>, then enter long.</p>
+            <p style="margin: 0; font-size: 11px; color: #f87171;"><b>Stop Loss:</b> Below ₹${fmt(f236)} &nbsp;|&nbsp; <b>Target:</b> ${targetLabel} at ₹${fmt(high)}</p>
+          </div>
+          <div style="background: #1f2937; padding: 12px; border-radius: 4px; border-left: 3px solid #ef4444;">
+            <h6 style="margin: 0 0 6px 0; color: #ef4444; font-size: 12px; text-transform: uppercase;">BEARISH (SHORT) SETUP</h6>
+            <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #e5e7eb;"><b>Sell Zone (38.2% - 61.8% Pullback):</b> ₹${fmt(f382)} – ₹${fmt(f618)}</p>
+            <p style="margin: 0 0 8px 0; font-size: 11px; color: #9ca3af; line-height: 1.4;">Wait for price to bounce up into this zone, look for a bearish candlestick close on the <b>${timeframeLabel}</b>, then enter short.</p>
+            <p style="margin: 0; font-size: 11px; color: #34d399;"><b>Stop Loss:</b> Above ₹${fmt(f786)} &nbsp;|&nbsp; <b>Target:</b> ${targetLabel} at ₹${fmt(low)}</p>
+          </div>
+        </div>
+      `;
+    }
+
     function getIndicatorsTableHTML(tf) {
       if (!activeStockData) return '';
       const data = tf === '5m' ? activeStockData.intra : activeStockData.daily;
@@ -777,6 +901,18 @@
           longSlLabel = 'R2 Resist';
           longT1Label = 'R3 + Ext';
           longT2Label = 'R3 + 2xExt';
+        } else if (levels.long.trigger === S1) {
+          longSlLabel = 'S2 Support';
+          longT1Label = 'Pivot Point';
+          longT2Label = 'R1 Resist';
+        } else if (levels.long.trigger === S2) {
+          longSlLabel = 'S3 Support';
+          longT1Label = 'S1 Support';
+          longT2Label = 'Pivot Point';
+        } else if (levels.long.trigger === S3) {
+          longSlLabel = 'S3 - Ext';
+          longT1Label = 'S2 Support';
+          longT2Label = 'S1 Support';
         }
 
         let shortSlLabel = 'Resistance';
@@ -799,6 +935,18 @@
           shortSlLabel = 'S2 Support';
           shortT1Label = 'S3 - Ext';
           shortT2Label = 'S3 - 2xExt';
+        } else if (levels.short.trigger === R1) {
+          shortSlLabel = 'R2 Resist';
+          shortT1Label = 'Pivot Point';
+          shortT2Label = 'S1 Support';
+        } else if (levels.short.trigger === R2) {
+          shortSlLabel = 'R3 Resist';
+          shortT1Label = 'R1 Resist';
+          shortT2Label = 'Pivot Point';
+        } else if (levels.short.trigger === R3) {
+          shortSlLabel = 'R3 + Ext';
+          shortT1Label = 'R2 Resist';
+          shortT2Label = 'R1 Resist';
         }
 
         return `
@@ -995,7 +1143,7 @@
     }
 
     // Dynamic Market State Evaluator (IST specific)
-    function getMarketStatusHTML() {
+    function isMarketOpen() {
       const now = new Date();
       const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
       const day = istTime.getDay(); // 0 = Sunday, 1 = Monday
@@ -1004,9 +1152,11 @@
 
       const timeInMinutes = (hours * 60) + minutes;
       const isWeekday = day >= 1 && day <= 5;
-      const isOpen = isWeekday && (timeInMinutes >= 555) && (timeInMinutes < 930);
+      return isWeekday && (timeInMinutes >= 555) && (timeInMinutes < 930);
+    }
 
-      if (isOpen) {
+    function getMarketStatusHTML() {
+      if (isMarketOpen()) {
         return `<span style="color: #4ade80;">🟢 <b>Live Market Stream Active</b></span> &nbsp;·&nbsp; Real-time pricing via Yahoo Finance`;
       } else {
         return `⏸️ <b>Market Offline (Showing Last Completed Session)</b> &nbsp;·&nbsp; NSE Hours: Mon-Fri, 9:15 AM - 3:30 PM IST &nbsp;·&nbsp; Data via Yahoo Finance`;
@@ -1074,24 +1224,7 @@
           const rTS = dailyJson.chart.result[0].timestamp || [];
           for (let i = 0; i < rDC.length; i++) {
             if (rDC[i] != null && rDH[i] != null && rDL[i] != null && rDO[i] != null && rDV[i] != null && rDV[i] > 0) {
-              let closeVal = rDC[i];
-              let highVal = rDH[i];
-              let lowVal = rDL[i];
-              let openVal = rDO[i];
-              let volVal = rDV[i];
-
-              // Apply Rights Issue adjustments for EXICOM.NS
-              // Ex-date: July 7, 2025 (timestamp: 1751846400).
-              // Adjustment factor: 208.85 / 217.00 = 0.9624424
-              if (sym === 'EXICOM' && rTS[i] < 1751846400) {
-                const adjFactor = 0.9624424;
-                closeVal *= adjFactor;
-                highVal *= adjFactor;
-                lowVal *= adjFactor;
-                openVal *= adjFactor;
-              }
-
-              dC.push(closeVal); dH.push(highVal); dL.push(lowVal); dO.push(openVal); dV.push(volVal); dTS.push(rTS[i]);
+              dC.push(rDC[i]); dH.push(rDH[i]); dL.push(rDL[i]); dO.push(rDO[i]); dV.push(rDV[i]); dTS.push(rTS[i]);
             }
           }
 
@@ -1234,6 +1367,18 @@
         }
         const volRatio = avgVol20 > 0 ? (totalVol / avgVol20) : 0;
 
+        // Daily Indicators: MACD, Supertrend, Bollinger Bands, ADX
+        let dailyMACD = { macd: 0, signal: 0, histogram: 0 };
+        let dailyST = { value: ltp, direction: 'Neutral' };
+        let dailyBB = { upper: 0, middle: 0, lower: 0, width: 0, pctB: 50 };
+        let dailyADXData = { adx: 0, plusDI: 0, minusDI: 0 };
+        if (dailyJson && dC.length >= 30) {
+          dailyMACD = calcMACD(dC);
+          dailyST = calcSupertrend(dH, dL, dC, 10, 3);
+          dailyBB = calcBollingerBands(dC, 20);
+          dailyADXData = calcADX(dH, dL, dC, 14);
+        }
+
         // Daily Technical Calculations
         let dailyRsi = rsi;
         let dailyEmaTrend = 'Neutral';
@@ -1333,20 +1478,26 @@
         if (volRatio >= 1.0) { dailyBullishScore++; dailyBearishScore++; }
 
         let dailyVerdictVal, dailyVerdictClass, dailyVerdictLogic, dailyDirection;
+        const isDailyTrending = dailyADXData.adx >= 20;
+
         if (dailyBullishScore >= 4) {
           dailyVerdictVal = `STRONG LONG (${dailyBullishScore}/5)`;
           dailyVerdictClass = 'green';
-          dailyVerdictLogic = 'High probability daily setup. Market structure, daily trend alignment, daily momentum, and volume parameters validate a long entry.';
+          dailyVerdictLogic = isDailyTrending
+            ? 'High probability daily momentum breakout setup. Market structure, trend alignment, and volume parameters validate a long entry above breakout levels.'
+            : 'Ranging market conditions. High probability mean-reversion buy setup. Accumulating long positions from support floors.';
           dailyDirection = 'Long';
         } else if (dailyBearishScore >= 4) {
           dailyVerdictVal = `STRONG SHORT (${dailyBearishScore}/5)`;
           dailyVerdictClass = 'red';
-          dailyVerdictLogic = 'High probability daily short setup. Bearish daily structure, EMAs, momentum, and volume validate a short entry.';
+          dailyVerdictLogic = isDailyTrending
+            ? 'High probability daily momentum breakdown setup. Downward structure, bearish EMAs, and volume parameters validate a short entry below support.'
+            : 'Ranging market conditions. High probability mean-reversion short setup. Selling pullbacks near key resistance ceilings.';
           dailyDirection = 'Short';
         } else {
           dailyVerdictVal = `NEUTRAL / WAIT (${dailyBullishScore}L / ${dailyBearishScore}S)`;
           dailyVerdictClass = 'amber';
-          dailyVerdictLogic = 'Mixed daily technical signals. Wait for a breakout above daily resistance or daily EMA stabilization.';
+          dailyVerdictLogic = 'Mixed daily technical signals. Wait for a clear breakout above daily resistance ceilings or stabilization near support floors.';
           dailyDirection = dailyBullishScore >= dailyBearishScore ? 'Long' : 'Short';
         }
 
@@ -1377,13 +1528,13 @@
             ? `Stock opened ${Math.abs(gapPct).toFixed(2)}% below previous close. Bearish gap — sellers in control from the open. Watch for gap-fill recovery to ₹${fmt(prevClose)}.`
             : `Stock opened within 0.5% of previous close (₹${fmt(prevClose)}). No significant gap — price discovery ongoing.`;
 
-        // Fibonacci Retracement (from previous session's confirmed High/Low)
-        const fibRange = prevH - prevL;
-        const fib236 = prevL + 0.236 * fibRange;
-        const fib382 = prevL + 0.382 * fibRange;
-        const fib500 = prevL + 0.500 * fibRange;
-        const fib618 = prevL + 0.618 * fibRange;
-        const fib786 = prevL + 0.786 * fibRange;
+        // Fibonacci Retracement (from the current intraday session's range)
+        const fibRange = dayHigh - dayLow;
+        const fib236 = dayLow + 0.764 * fibRange; // 23.6% retracement from high (76.4% from low)
+        const fib382 = dayLow + 0.618 * fibRange; // 38.2% retracement from high (61.8% from low)
+        const fib500 = dayLow + 0.500 * fibRange; // 50.0% retracement
+        const fib618 = dayLow + 0.382 * fibRange; // 61.8% retracement from high (38.2% from low)
+        const fib786 = dayLow + 0.214 * fibRange; // 78.6% retracement from high (21.4% from low)
 
         // 5M Indicators: MACD, Supertrend, Bollinger Bands, ADX
         const intraMACD = calcMACD(close);
@@ -1391,17 +1542,7 @@
         const intraBB = calcBollingerBands(close, 20);
         const intraADX = calcADX(high, low, close, 14);
 
-        // Daily Indicators: MACD, Supertrend, Bollinger Bands, ADX
-        let dailyMACD = { macd: 0, signal: 0, histogram: 0 };
-        let dailyST = { value: ltp, direction: 'Neutral' };
-        let dailyBB = { upper: 0, middle: 0, lower: 0, width: 0, pctB: 50 };
-        let dailyADXData = { adx: 0, plusDI: 0, minusDI: 0 };
-        if (dailyJson && dC.length >= 30) {
-          dailyMACD = calcMACD(dC);
-          dailyST = calcSupertrend(dH, dL, dC, 10, 3);
-          dailyBB = calcBollingerBands(dC, 20);
-          dailyADXData = calcADX(dH, dL, dC, 14);
-        }
+
 
         // --- 3-DAY VOLATILITY RISK CONE PROJECTION ---
         const now = new Date();
@@ -1462,55 +1603,136 @@
         // Dynamic Zone-based Pivot Trade Levels for Daily (1D) Strategy
         let pivotLongTrigger, pivotLongSl, pivotLongT1, pivotLongT2;
         const rRange = R3 - R2; // Range unit for levels beyond standard pivots
+        const sRange = S2 - S3; // Range unit for levels beyond standard pivots
+        const isTrending = dailyADXData.adx >= 20;
 
-        if (ltp < PP) {
-          pivotLongTrigger = PP;
-          pivotLongSl = S1;
-          pivotLongT1 = R1;
-          pivotLongT2 = R2;
-        } else if (ltp >= PP && ltp < R1) {
-          pivotLongTrigger = R1;
-          pivotLongSl = PP;
-          pivotLongT1 = R2;
-          pivotLongT2 = R3;
-        } else if (ltp >= R1 && ltp < R2) {
-          pivotLongTrigger = R2;
-          pivotLongSl = R1;
-          pivotLongT1 = R3;
-          pivotLongT2 = R3 + rRange;
+        if (!isTrending) {
+          // Ranging Market Regime (Mean Reversion / Support Buy / Bounce)
+          if (ltp <= S3) {
+            pivotLongTrigger = S2;
+            pivotLongSl = S3;
+            pivotLongT1 = S1;
+            pivotLongT2 = PP;
+          } else if (ltp <= S1 && ltp > S3) {
+            // Reclaim S1 breakout (Conservative Entry for ranging)
+            pivotLongTrigger = S1;
+            pivotLongSl = S2;
+            pivotLongT1 = PP;
+            pivotLongT2 = R1;
+          } else if (ltp <= PP && ltp > S1) {
+            pivotLongTrigger = PP;
+            pivotLongSl = S1;
+            pivotLongT1 = R1;
+            pivotLongT2 = R2;
+          } else if (ltp <= R1 && ltp > PP) {
+            pivotLongTrigger = R1;
+            pivotLongSl = PP;
+            pivotLongT1 = R2;
+            pivotLongT2 = R3;
+          } else if (ltp <= R2 && ltp > R1) {
+            pivotLongTrigger = R2;
+            pivotLongSl = R1;
+            pivotLongT1 = R3;
+            pivotLongT2 = R3 + rRange;
+          } else {
+            // ltp > R2
+            pivotLongTrigger = R3;
+            pivotLongSl = R2;
+            pivotLongT1 = R3 + rRange;
+            pivotLongT2 = R3 + 2 * rRange;
+          }
         } else {
-          // ltp >= R2
-          pivotLongTrigger = R3;
-          pivotLongSl = R2;
-          pivotLongT1 = R3 + rRange;
-          pivotLongT2 = R3 + 2 * rRange;
+          // Trending Market Regime (Momentum Breakout)
+          if (ltp < PP) {
+            pivotLongTrigger = PP;
+            pivotLongSl = S1;
+            pivotLongT1 = R1;
+            pivotLongT2 = R2;
+          } else if (ltp >= PP && ltp < R1) {
+            pivotLongTrigger = R1;
+            pivotLongSl = PP;
+            pivotLongT1 = R2;
+            pivotLongT2 = R3;
+          } else if (ltp >= R1 && ltp < R2) {
+            pivotLongTrigger = R2;
+            pivotLongSl = R1;
+            pivotLongT1 = R3;
+            pivotLongT2 = R3 + rRange;
+          } else {
+            // ltp >= R2
+            pivotLongTrigger = R3;
+            pivotLongSl = R2;
+            pivotLongT1 = R3 + rRange;
+            pivotLongT2 = R3 + 2 * rRange;
+          }
         }
         const pivotLongRr = (pivotLongTrigger - pivotLongSl) > 0 ? (pivotLongT2 - pivotLongTrigger) / (pivotLongTrigger - pivotLongSl) : 1.67;
 
         let pivotShortTrigger, pivotShortSl, pivotShortT1, pivotShortT2;
-        const sRange = S2 - S3; // Range unit for levels beyond standard pivots
 
-        if (ltp > PP) {
-          pivotShortTrigger = PP;
-          pivotShortSl = R1;
-          pivotShortT1 = S1;
-          pivotShortT2 = S2;
-        } else if (ltp <= PP && ltp > S1) {
-          pivotShortTrigger = S1;
-          pivotShortSl = PP;
-          pivotShortT1 = S2;
-          pivotShortT2 = S3;
-        } else if (ltp <= S1 && ltp > S2) {
-          pivotShortTrigger = S2;
-          pivotShortSl = S1;
-          pivotShortT1 = S3;
-          pivotShortT2 = S3 - sRange;
+        if (!isTrending) {
+          // Ranging Market Regime (Mean Reversion / Resistance Sell / Reject)
+          if (ltp >= R3) {
+            pivotShortTrigger = R3;
+            pivotShortSl = R3 + rRange;
+            pivotShortT1 = R2;
+            pivotShortT2 = R1;
+          } else if (ltp >= R2 && ltp < R3) {
+            pivotShortTrigger = R2;
+            pivotShortSl = R3;
+            pivotShortT1 = R1;
+            pivotShortT2 = PP;
+          } else if (ltp >= R1 && ltp < R2) {
+            pivotShortTrigger = R1;
+            pivotShortSl = R2;
+            pivotShortT1 = PP;
+            pivotShortT2 = S1;
+          } else if (ltp >= PP && ltp < R1) {
+            pivotShortTrigger = PP;
+            pivotShortSl = R1;
+            pivotShortT1 = S1;
+            pivotShortT2 = S2;
+          } else if (ltp >= S1 && ltp < PP) {
+            pivotShortTrigger = S1;
+            pivotShortSl = PP;
+            pivotShortT1 = S2;
+            pivotShortT2 = S3;
+          } else if (ltp >= S2 && ltp < S1) {
+            pivotShortTrigger = S2;
+            pivotShortSl = S1;
+            pivotShortT1 = S3;
+            pivotShortT2 = S3 - sRange;
+          } else {
+            // ltp < S2
+            pivotShortTrigger = S3;
+            pivotShortSl = S2;
+            pivotShortT1 = S3 - sRange;
+            pivotShortT2 = S3 - 2 * sRange;
+          }
         } else {
-          // ltp <= S2
-          pivotShortTrigger = S3;
-          pivotShortSl = S2;
-          pivotShortT1 = S3 - sRange;
-          pivotShortT2 = S3 - 2 * sRange;
+          // Trending Market Regime (Momentum Breakdown)
+          if (ltp > PP) {
+            pivotShortTrigger = PP;
+            pivotShortSl = R1;
+            pivotShortT1 = S1;
+            pivotShortT2 = S2;
+          } else if (ltp <= PP && ltp > S1) {
+            pivotShortTrigger = S1;
+            pivotShortSl = PP;
+            pivotShortT1 = S2;
+            pivotShortT2 = S3;
+          } else if (ltp <= S1 && ltp > S2) {
+            pivotShortTrigger = S2;
+            pivotShortSl = S1;
+            pivotShortT1 = S3;
+            pivotShortT2 = S3 - sRange;
+          } else {
+            // ltp <= S2
+            pivotShortTrigger = S3;
+            pivotShortSl = S2;
+            pivotShortT1 = S3 - sRange;
+            pivotShortT2 = S3 - 2 * sRange;
+          }
         }
         const pivotShortRr = (pivotShortSl - pivotShortTrigger) > 0 ? (pivotShortTrigger - pivotShortT2) / (pivotShortSl - pivotShortTrigger) : 1.67;
 
@@ -1519,7 +1741,7 @@
           ltp, totalVol, volRatio,
           fiftyTwoWeekHigh, fiftyTwoWeekLow,
           gap: { amount: gap, pct: gapPct, label: gapLabel, cls: gapClass, logic: gapLogic },
-          fib: { high: prevH, low: prevL, f236: fib236, f382: fib382, f500: fib500, f618: fib618, f786: fib786 },
+          fib: { high: dayHigh, low: dayLow, f236: fib236, f382: fib382, f500: fib500, f618: fib618, f786: fib786 },
           pivots: { PP, R1, S1, R2, S2, R3, S3, R4, R5, R6, S4, S5, S6, high: dayHigh, low: dayLow },
           intra: {
             vwap,
@@ -1677,7 +1899,19 @@
           </tbody>
         </table>
 
-        <h3>Fibonacci Retracement (Prev Session: ₹${fmt(activeStockData.fib.low)} – ₹${fmt(activeStockData.fib.high)})</h3>
+        <h3 id="fib-table-title">Fibonacci Retracement (Previous Session: ₹${fmt(activeStockData.fib.low)} – ₹${fmt(activeStockData.fib.high)})</h3>
+        
+        <div class="timeframe-toggle-container" style="margin-top: 10px; margin-bottom: 10px;">
+          <span>Fibonacci Anchor Range:</span>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="fib-anchor-session" onclick="setFibAnchor('session')">Session Range (Micro)</button>
+            <button class="toggle-btn" id="fib-anchor-macro" onclick="setFibAnchor('macro')">52-Week Range (Macro)</button>
+          </div>
+        </div>
+        <p id="fib-description-text" style="font-size: 12.5px; color: #a1a1aa; margin-top: -5px; margin-bottom: 15px; line-height: 1.5; background: #111827; padding: 10px 12px; border-radius: 4px; border-left: 3px solid #fbbf24;">
+          <b>Session Range (Micro):</b> Fibonacci retracements calculated from the high and low range of the most recent completed trading session. Utilized by intraday traders to identify short-term support, resistance, and short-covering pivot zones.
+        </p>
+
         <table class="three-col-table">
           <thead>
             <tr>
@@ -1686,40 +1920,22 @@
               <th class="col-logic">Retracement Role</th>
             </tr>
           </thead>
-          <tbody>
-            ${tRow('100% (Prev High)', `₹${fmt(activeStockData.fib.high)}`, 'red', 'Full extension — previous session high. Breakout above signals continuation.')}
-            ${tRow('23.6% Retracement', `₹${fmt(activeStockData.fib.f786)}`, 'red', 'Very shallow retracement. Indicates strong momentum — trend likely intact.')}
-            ${tRow('38.2% Retracement', `₹${fmt(activeStockData.fib.f618)}`, 'amber', 'Shallow retracement — typical pullback in a strong trend. Common scalp entry zone.')}
-            ${tRow('50.0% Retracement', `₹${fmt(activeStockData.fib.f500)}`, 'amber', 'Mid-point of the previous session range. Neutral inflection zone — price often pauses here.')}
-            ${tRow('61.8% Retracement', `₹${fmt(activeStockData.fib.f382)}`, 'green', 'Golden ratio — strongest retracement level. High-probability reversal or continuation zone.')}
-            ${tRow('78.6% Retracement', `₹${fmt(activeStockData.fib.f236)}`, 'green', 'Deep retracement zone. Often final defence before trend reversal.')}
-            ${tRow('0% (Prev Low)', `₹${fmt(activeStockData.fib.low)}`, 'green', 'Full retracement — previous session low. Breakdown below signals bearish continuation.')}
+          <tbody id="fib-table-body">
+            <!-- Dynamic anchor Fibonacci table rows injected here -->
           </tbody>
         </table>
 
         <div class="info-box" style="border-left-color: #fbbf24; margin-top: 15px; margin-bottom: 25px;">
           <h4>Trading Guide: Key Fibonacci Retracement Levels</h4>
-          <p>Traders use Fibonacci retracements to identify key potential support/resistance inflection zones during pullbacks:</p>
+          <p>Traders use Fibonacci levels to identify key support and resistance boundaries. Because the levels are plotted from 0% (Low) to 100% (High), they are interpreted based on price direction relative to the range:</p>
           <ul>
-            <li><strong>61.8% (The Golden Ratio):</strong> The most critical retracement level. Pullbacks holding above 61.8% are high-conviction continuation setups (strong bounce/rebound areas). A confirmed breach below 61.8% indicates the current trend is failing and a trend reversal is imminent.</li>
-            <li><strong>38.2% & 50.0% (Standard Pullbacks):</strong> Shallow to moderate retracement zones. In strong, high-velocity trends, pullbacks rarely go deeper than 38.2% or 50%. Watch for price stabilization or candlestick reversal patterns (e.g., hammers) at these levels for momentum re-entry.</li>
-            <li><strong>78.6% (Last Line of Defense):</strong> Deep retracement level. This is the final boundary to protect the prior trend structure. If the price fails to hold here, a full trend failure/complete reversal to the 100% retracement (or prior session extreme) is highly likely.</li>
+            <li><strong>61.8% & 38.2% Levels:</strong> Critical structural nodes. In a pullback from high, the 61.8% level (representing a 38.2% retracement distance) is key support. The 38.2% level (representing a 61.8% retracement distance) is the Golden Ratio pullback zone, which serves as a high-probability reversal entry area.</li>
+            <li><strong>50.0% (Mid-Point):</strong> The equilibrium level. Price frequently consolidates or pauses at this mid-point to establish value before continuing its primary trend.</li>
+            <li><strong>23.6% & 78.6% Levels:</strong> Structural boundaries. The 78.6% level (shallow 21.4% pullback from high) indicates strong continuation momentum. The 23.6% level (deep 76.4% pullback from high) is the final structural defense line for a trend before invalidation.</li>
           </ul>
           
-          <h5 style="margin: 18px 0 8px 0; color: #fbbf24; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🔥 High-Conviction Fibonacci Retracement Formulas</h5>
-          <div class="fib-formulas-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
-            <div style="background: #1f2937; padding: 12px; border-radius: 4px; border-left: 3px solid #10b981;">
-              <h6 style="margin: 0 0 6px 0; color: #10b981; font-size: 12px; text-transform: uppercase;">BULLISH (LONG) SETUP</h6>
-              <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #e5e7eb;"><b>Buy Zone (38.2% - 61.8% Pullback):</b> ₹${fmt(activeStockData.fib.f618)} – ₹${fmt(activeStockData.fib.f382)}</p>
-              <p style="margin: 0 0 8px 0; font-size: 11px; color: #9ca3af; line-height: 1.4;">Wait for price to pull back into this zone, look for a bullish hammer/pin-bar close on 5m chart, then enter long.</p>
-              <p style="margin: 0; font-size: 11px; color: #f87171;"><b>Stop Loss:</b> Below ₹${fmt(activeStockData.fib.f236)} &nbsp;|&nbsp; <b>Target 1:</b> ₹${fmt(activeStockData.fib.high)}</p>
-            </div>
-            <div style="background: #1f2937; padding: 12px; border-radius: 4px; border-left: 3px solid #ef4444;">
-              <h6 style="margin: 0 0 6px 0; color: #ef4444; font-size: 12px; text-transform: uppercase;">BEARISH (SHORT) SETUP</h6>
-              <p style="margin: 0 0 6px 0; font-size: 12.5px; color: #e5e7eb;"><b>Sell Zone (38.2% - 61.8% Pullback):</b> ₹${fmt(activeStockData.fib.f382)} – ₹${fmt(activeStockData.fib.f618)}</p>
-              <p style="margin: 0 0 8px 0; font-size: 11px; color: #9ca3af; line-height: 1.4;">Wait for price to bounce up into this zone, look for a shooting star/bearish engulfing close on 5m chart, then enter short.</p>
-              <p style="margin: 0; font-size: 11px; color: #34d399;"><b>Stop Loss:</b> Above ₹${fmt(activeStockData.fib.f786)} &nbsp;|&nbsp; <b>Target 1:</b> ₹${fmt(activeStockData.fib.low)}</p>
-            </div>
+          <div id="fib-guide-container">
+            <!-- Dynamic anchor guide boxes injected here -->
           </div>
         </div>
       </div>
@@ -1752,6 +1968,7 @@
     `;
 
         setTimeframe(selectedTimeframe);
+        setFibAnchor(selectedFibAnchor);
 
       } catch (e) {
         statusEl.style.display = 'block';
