@@ -48,13 +48,17 @@
     .hint b {
       color: #d1d5db;
     }
-
     /* Search Bar Area */
     .search-area {
-      margin-bottom: 20px;
+      margin-bottom: 8px;
       display: flex;
       gap: 10px;
       align-items: center;
+    }
+
+    .search-wrapper {
+      position: relative;
+      display: inline-block;
     }
 
     input {
@@ -65,11 +69,13 @@
       font-size: 16px;
       width: 250px;
       text-transform: uppercase;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }
 
     input:focus {
       border-color: #58a6ff;
       outline: none;
+      box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.15);
     }
 
     .search-area button {
@@ -80,6 +86,7 @@
       font-size: 15px;
       cursor: pointer;
       font-weight: 500;
+      transition: background 0.2s ease;
     }
 
     .search-area button:hover {
@@ -89,7 +96,97 @@
     .search-area button:disabled {
       background: #333;
       cursor: not-allowed;
-      color: #777;
+    }
+
+    /* Autocomplete Dropdown styling */
+    .autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 5px);
+      left: 0;
+      width: 100%;
+      min-width: 280px;
+      background: rgba(22, 22, 29, 0.96);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      max-height: 260px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .autocomplete-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-align: left;
+      transition: background 0.2s ease;
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    .autocomplete-item:hover, .autocomplete-item.active {
+      background: rgba(88, 166, 255, 0.12);
+    }
+
+    .autocomplete-ticker {
+      font-weight: 600;
+      color: #58a6ff;
+      font-size: 12px;
+      background: rgba(88, 166, 255, 0.1);
+      padding: 3px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .autocomplete-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Hotlist Pills styling */
+    .hotlist-container {
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .hotlist-label {
+      font-size: 12px;
+      color: #8b949e;
+      font-weight: 500;
+      margin-right: 4px;
+    }
+
+    .hotlist-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #c9d1d9;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .hotlist-pill:hover {
+      background: rgba(88, 166, 255, 0.1);
+      border-color: rgba(88, 166, 255, 0.3);
+      color: #58a6ff;
     }
 
     #status {
@@ -488,6 +585,8 @@
       border-color: #58a6ff;
     }
   </style>
+  <script src="nse-stocks.js"></script>
+  <script src="nse-all-stocks.js"></script>
 </head>
 
 <body>
@@ -499,12 +598,22 @@
     </div>
 
     <div class="search-area">
-      <input id="sym" type="text" placeholder="TICKER (e.g. RELIANCE)" onkeydown="if(event.key==='Enter') fetchStock()"
-        autocomplete="off" style="width: 220px;" />
+      <div class="search-wrapper">
+        <input id="sym" type="text" placeholder="TICKER (e.g. RELIANCE)" autocomplete="off" />
+        <div id="autocomplete-suggestions" class="autocomplete-dropdown"></div>
+      </div>
       <button id="btn" onclick="fetchStock()">Run Analysis</button>
     </div>
 
-    <p class="hint">Use exact NSE ticker: <b>RELIANCE</b> · <b>TCS</b> · <b>HDFCBANK</b> · <b>TATACOMM</b></p>
+    <div class="hotlist-container">
+      <span class="hotlist-label">Quick Access:</span>
+      <button class="hotlist-pill" onclick="loadHotlist('RELIANCE')">RELIANCE</button>
+      <button class="hotlist-pill" onclick="loadHotlist('HDFCBANK')">HDFCBANK</button>
+      <button class="hotlist-pill" onclick="loadHotlist('ITC')">ITC</button>
+      <button class="hotlist-pill" onclick="loadHotlist('SBIN')">SBIN</button>
+      <button class="hotlist-pill" onclick="loadHotlist('TCS')">TCS</button>
+      <button class="hotlist-pill" onclick="loadHotlist('INFY')">INFY</button>
+    </div>
 
     <div id="status">Ready. Type a ticker and press enter.</div>
     <div id="output"></div>
@@ -521,6 +630,220 @@
 
     let activeStockData = null;
     let selectedTimeframe = '1d';
+
+    // Autocomplete & Hotlist Search Logic
+    const suggestionsEl = () => document.getElementById('autocomplete-suggestions');
+    let activeSuggestionIndex = -1;
+    let currentSuggestions = [];
+    let localNseStocks = [];
+    let allNseStocks = [];
+
+    function loadLocalStocks() {
+      localNseStocks = window.LOCAL_NSE_STOCKS || [];
+      allNseStocks = window.ALL_NSE_STOCKS || [];
+    }
+
+    function loadHotlist(ticker) {
+      const input = document.getElementById('sym');
+      if (input) {
+        input.value = ticker;
+        closeSuggestions();
+        fetchStock();
+      }
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    function highlightText(text, query) {
+      if (!query) return text;
+      const idx = text.toLowerCase().indexOf(query.toLowerCase());
+      if (idx === -1) return text;
+      const part = text.substring(idx, idx + query.length);
+      return text.substring(0, idx) + `<strong>${part}</strong>` + text.substring(idx + query.length);
+    }
+
+    async function fetchSuggestions(query) {
+      const el = suggestionsEl();
+      if (!el) return;
+      
+      const cleanQuery = query.trim();
+      if (!cleanQuery) {
+        closeSuggestions();
+        return;
+      }
+      
+      const lowerQuery = cleanQuery.toLowerCase();
+      const matchesMap = new Map();
+      
+      function addMatch(stock, score) {
+        const symKey = stock.symbol.toUpperCase();
+        const existing = matchesMap.get(symKey);
+        if (!existing || score < existing.score) {
+          matchesMap.set(symKey, {
+            symbol: symKey + '.NS',
+            longname: stock.name,
+            industryDisp: stock.industry || 'Equity',
+            score: score
+          });
+        }
+      }
+      
+      // 1. Search leaders list (highest priority, lower score is better)
+      localNseStocks.forEach(stock => {
+        const symbol = stock.symbol.toLowerCase();
+        const name = stock.name.toLowerCase();
+        
+        let score = -1;
+        if (symbol === lowerQuery) {
+          score = 0; // Exact symbol match
+        } else if (symbol.startsWith(lowerQuery)) {
+          score = 2; // Symbol starts with
+        } else if (name.startsWith(lowerQuery)) {
+          score = 4; // Name starts with
+        } else if (symbol.includes(lowerQuery)) {
+          score = 6; // Symbol contains
+        } else if (name.includes(lowerQuery)) {
+          score = 8; // Name contains
+        }
+        
+        if (score !== -1) {
+          addMatch(stock, score);
+        }
+      });
+      
+      // 2. Search general list (secondary priority, offset scores by +1)
+      allNseStocks.forEach(stock => {
+        const symbol = stock.symbol.toLowerCase();
+        const name = stock.name.toLowerCase();
+        
+        let score = -1;
+        if (symbol === lowerQuery) {
+          score = 1; // Exact symbol match
+        } else if (symbol.startsWith(lowerQuery)) {
+          score = 3; // Symbol starts with
+        } else if (name.startsWith(lowerQuery)) {
+          score = 5; // Name starts with
+        } else if (symbol.includes(lowerQuery)) {
+          score = 7; // Symbol contains
+        } else if (name.includes(lowerQuery)) {
+          score = 9; // Name contains
+        }
+        
+        if (score !== -1) {
+          addMatch(stock, score);
+        }
+      });
+      
+      // Convert to array and sort by priority score
+      let matches = Array.from(matchesMap.values());
+      matches.sort((a, b) => a.score - b.score);
+      let mergedResults = matches.slice(0, 6);
+      
+      // Fallback to API if we have fewer than 6 matches
+      if (mergedResults.length < 6) {
+        try {
+          const searchUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(cleanQuery)}&quotesCount=8&newsCount=0`;
+          const response = await fetch(PROXY + encodeURIComponent(searchUrl));
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.quotes) {
+              const apiQuotes = data.quotes.filter(q => q.symbol && q.symbol.endsWith('.NS'));
+              
+              apiQuotes.forEach(apiStock => {
+                if (!mergedResults.some(r => r.symbol === apiStock.symbol)) {
+                  mergedResults.push({
+                    symbol: apiStock.symbol,
+                    longname: apiStock.longname || apiStock.shortname || apiStock.symbol,
+                    industryDisp: apiStock.industryDisp || apiStock.industry || apiStock.sectorDisp || apiStock.sector || 'Equity'
+                  });
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.error('API Autocomplete fallback failed:', e);
+        }
+      }
+      
+      currentSuggestions = mergedResults.slice(0, 6);
+      
+      if (currentSuggestions.length === 0) {
+        closeSuggestions();
+        return;
+      }
+      
+      renderSuggestions(cleanQuery);
+    }
+
+    function renderSuggestions(query) {
+      const el = suggestionsEl();
+      if (!el) return;
+      el.innerHTML = '';
+      activeSuggestionIndex = -1;
+      
+      currentSuggestions.forEach((q, idx) => {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+        
+        const ticker = q.symbol.replace(/\.NS$/, '');
+        const companyName = q.longname;
+        
+        const highlightedName = highlightText(companyName, query);
+        const highlightedTicker = highlightText(ticker, query);
+        
+        item.style = 'display: flex; align-items: center; padding: 10px 14px;';
+        item.innerHTML = `
+          <div style="margin-right: 12px; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(88, 166, 255, 0.08); border: 1px solid rgba(88, 166, 255, 0.15); border-radius: 6px; flex-shrink: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </div>
+          <div style="display: flex; flex-direction: column; overflow: hidden; padding-right: 10px; flex-grow: 1;">
+            <span class="autocomplete-name" style="font-weight: 600; color: #fff; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;">${highlightedName}</span>
+            <span style="font-size: 11.5px; color: #8b949e; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;">Stock &bull; ${highlightedTicker}</span>
+          </div>
+          <span class="autocomplete-ticker">${ticker}</span>
+        `;
+        
+        item.addEventListener('click', () => {
+          selectSuggestion(idx);
+        });
+        
+        el.appendChild(item);
+      });
+      
+      el.style.display = 'block';
+    }
+
+    function selectSuggestion(idx) {
+      if (idx >= 0 && idx < currentSuggestions.length) {
+        const ticker = currentSuggestions[idx].symbol.replace(/\.NS$/, '');
+        const input = document.getElementById('sym');
+        if (input) {
+          input.value = ticker;
+          closeSuggestions();
+          fetchStock();
+        }
+      }
+    }
+
+    function closeSuggestions() {
+      const el = suggestionsEl();
+      if (el) {
+        el.style.display = 'none';
+        el.innerHTML = '';
+      }
+      currentSuggestions = [];
+      activeSuggestionIndex = -1;
+    }
 
     function setTimeframe(tf) {
       if (!activeStockData) return;
@@ -1980,14 +2303,94 @@
       }
     }
 
-    // Parse query parameters on load to auto-load a stock
+    // Parse query parameters on load to auto-load a stock and setup listeners
     window.addEventListener('DOMContentLoaded', () => {
+      loadLocalStocks();
+
       const params = new URLSearchParams(window.location.search);
       const symbol = params.get('symbol') || params.get('sym');
       if (symbol) {
         document.getElementById('sym').value = symbol.trim().toUpperCase();
         fetchStock();
       }
+
+      // Input and Autocomplete Event Listeners
+      const inputEl = document.getElementById('sym');
+      const dropdownEl = document.getElementById('autocomplete-suggestions');
+      if (!inputEl || !dropdownEl) return;
+
+      const debouncedSuggest = debounce((val) => {
+        fetchSuggestions(val);
+      }, 250);
+
+      inputEl.addEventListener('input', (e) => {
+        debouncedSuggest(e.target.value);
+      });
+
+      inputEl.addEventListener('keydown', (e) => {
+        if (dropdownEl.style.display !== 'block') {
+          if (e.key === 'Enter') {
+            fetchStock();
+          }
+          return;
+        }
+
+        const items = dropdownEl.querySelectorAll('.autocomplete-item');
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+          updateActiveSuggestion(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+          updateActiveSuggestion(items);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (activeSuggestionIndex >= 0 && activeSuggestionIndex < items.length) {
+            selectSuggestion(activeSuggestionIndex);
+          } else {
+            selectSuggestion(0); // select first item on Enter by default
+          }
+        } else if (e.key === 'Escape') {
+          closeSuggestions();
+        }
+      });
+
+      function updateActiveSuggestion(items) {
+        items.forEach((item, idx) => {
+          if (idx === activeSuggestionIndex) {
+            item.classList.add('active');
+            item.scrollIntoView({ block: 'nearest' });
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+
+      // Close autocomplete dropdown on click outside
+      document.addEventListener('click', (e) => {
+        if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
+          closeSuggestions();
+        }
+      });
+
+      // TradingView-style global typing trigger
+      document.addEventListener('keydown', (e) => {
+        const active = document.activeElement;
+        if (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.length !== 1) return;
+
+        // Start typing if alphanumeric key is pressed
+        if (/^[a-zA-Z0-9/]$/.test(e.key)) {
+          e.preventDefault();
+          inputEl.focus();
+          inputEl.value = e.key;
+          fetchSuggestions(e.key);
+        }
+      });
     });
   </script>
 </body>
