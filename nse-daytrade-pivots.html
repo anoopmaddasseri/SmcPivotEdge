@@ -50,7 +50,7 @@
     }
     /* Search Bar Area */
     .search-area {
-      margin-bottom: 8px;
+      margin-bottom: 20px;
       display: flex;
       gap: 10px;
       align-items: center;
@@ -172,14 +172,17 @@
     }
 
     .hotlist-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.06);
       color: #c9d1d9;
-      padding: 4px 10px;
-      border-radius: 12px;
+      padding: 6px 12px;
+      border-radius: 14px;
       font-size: 12px;
       cursor: pointer;
-      font-weight: 500;
+      font-weight: 600;
       transition: all 0.2s ease;
     }
 
@@ -605,14 +608,16 @@
       <button id="btn" onclick="fetchStock()">Run Analysis</button>
     </div>
 
-    <div class="hotlist-container">
-      <span class="hotlist-label">Quick Access:</span>
-      <button class="hotlist-pill" onclick="loadHotlist('RELIANCE')">RELIANCE</button>
-      <button class="hotlist-pill" onclick="loadHotlist('HDFCBANK')">HDFCBANK</button>
-      <button class="hotlist-pill" onclick="loadHotlist('ITC')">ITC</button>
-      <button class="hotlist-pill" onclick="loadHotlist('SBIN')">SBIN</button>
-      <button class="hotlist-pill" onclick="loadHotlist('TCS')">TCS</button>
-      <button class="hotlist-pill" onclick="loadHotlist('INFY')">INFY</button>
+    <div class="hotlist-container" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <span id="hotlist-title" class="hotlist-label" style="font-weight: 600; color: #8b949e; font-size: 12px; margin-right: 4px; white-space: nowrap;">Quick Access:</span>
+      <div id="hotlist-pills" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <button class="hotlist-pill" onclick="loadHotlist('RELIANCE')">RELIANCE</button>
+        <button class="hotlist-pill" onclick="loadHotlist('HDFCBANK')">HDFCBANK</button>
+        <button class="hotlist-pill" onclick="loadHotlist('ITC')">ITC</button>
+        <button class="hotlist-pill" onclick="loadHotlist('SBIN')">SBIN</button>
+        <button class="hotlist-pill" onclick="loadHotlist('TCS')">TCS</button>
+        <button class="hotlist-pill" onclick="loadHotlist('INFY')">INFY</button>
+      </div>
     </div>
 
     <div id="status">Ready. Type a ticker and press enter.</div>
@@ -641,6 +646,280 @@
     function loadLocalStocks() {
       localNseStocks = window.LOCAL_NSE_STOCKS || [];
       allNseStocks = window.ALL_NSE_STOCKS || [];
+    }
+
+    // Dynamic Sector & Peer Stock Scanner (Zero-Hardcoding, Emoji-Free UI, DTOS sorted)
+    let scannerTickers = [];
+    let scannerIntervalId = null;
+
+    async function getIndustryForSymbol(symbol) {
+      // 1. Check if the symbol is in our local leaders list (instant)
+      const leader = localNseStocks.find(s => s.symbol.toUpperCase() === symbol.toUpperCase());
+      if (leader && leader.industry) {
+        return leader.industry;
+      }
+      
+      // 2. Fallback to Search API for mid/small-caps (like BBOX) to find their industry sector
+      try {
+        const searchUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol + '.NS')}&quotesCount=1&newsCount=0`;
+        const response = await fetch(PROXY + encodeURIComponent(searchUrl));
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.quotes && data.quotes[0]) {
+            const q = data.quotes[0];
+            return q.industryDisp || q.industry || q.sectorDisp || q.sector || 'Equity';
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch industry for non-leader:', e);
+      }
+      return 'Equity';
+    }
+
+    async function updateScannerTickers(symbol) {
+      if (!symbol) return;
+      const cleanSym = symbol.trim().toUpperCase().replace(/\.NS$/, '');
+      
+      // Get the industry sector
+      const industry = await getIndustryForSymbol(cleanSym);
+      
+      // Find all stocks in localNseStocks that belong to the same industry
+      let peers = localNseStocks.filter(s => s.industry && s.industry.toLowerCase() === industry.toLowerCase()).map(s => s.symbol.toUpperCase());
+      
+      // Make sure the active stock is in the list
+      if (!peers.includes(cleanSym)) {
+        peers.push(cleanSym);
+      }
+      
+      scannerTickers = peers;
+      
+      // Update the scanner row label with the current sector
+      const titleEl = document.getElementById('hotlist-title');
+      if (titleEl) {
+        titleEl.textContent = `Sector Peers (${industry}):`;
+      }
+    }
+
+    async function fetchScannerData() {
+      if (scannerTickers.length === 0) return [];
+      
+      // Split into parallel safe batches of 20 to avoid Yahoo server-side URL size limits
+      const batches = [];
+      for (let i = 0; i < scannerTickers.length; i += 20) {
+        batches.push(scannerTickers.slice(i, i + 20));
+      }
+      
+      const fetchPromises = batches.map(async (batch) => {
+        const symbolsWithNs = batch.map(s => encodeURIComponent(s + '.NS'));
+        const sparkUrl = `https://query1.finance.yahoo.com/v7/finance/spark?symbols=${symbolsWithNs.join(',')}&range=1d&interval=5m`;
+        
+        try {
+          const response = await fetch(PROXY + encodeURIComponent(sparkUrl));
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.spark && data.spark.result) {
+              return data.spark.result;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch scanner batch:', e);
+        }
+        return [];
+      });
+      
+      try {
+        const batchResults = await Promise.all(fetchPromises);
+        return batchResults.flat();
+      } catch (e) {
+        console.error('Failed to resolve all scanner batches:', e);
+        return [];
+      }
+    }
+
+    function processAndRenderScanner(results) {
+      const pillsContainer = document.getElementById('hotlist-pills');
+      if (!pillsContainer || !results || results.length === 0) return;
+      
+      const processedStocks = [];
+      
+      results.forEach(res => {
+        if (!res) return;
+        const symbol = res.symbol.replace(/\.NS$/, '');
+        const meta = res.response && res.response[0] && res.response[0].meta;
+        if (!meta) return;
+        
+        const price = meta.regularMarketPrice;
+        const prevClose = meta.previousClose || meta.chartPreviousClose;
+        const high = meta.regularMarketDayHigh;
+        const low = meta.regularMarketDayLow;
+        const volume = meta.regularMarketVolume || 0;
+        
+        if (!price || !prevClose || !high || !low) return;
+        
+        const changePercent = ((price - prevClose) / prevClose) * 100;
+        const rangePercent = prevClose ? (((high - low) / prevClose) * 100) : 0;
+        const valueTraded = price * volume;
+        
+        const distToHigh = ((high - price) / price) * 100;
+        const distToLow = ((price - low) / price) * 100;
+        const distToPdc = (Math.abs(price - prevClose) / prevClose) * 100;
+        
+        let setupName = "Neutral";
+        let setupBadge = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
+        let setupPriority = 5; // Lowest
+        let borderStyle = 'rgba(255, 255, 255, 0.06)';
+        let textColor = '#c9d1d9';
+        
+        // 1. Breakouts / Breakdowns (Rank 1)
+        if (distToHigh <= 0.1 && high > prevClose) {
+          setupName = "Day High BO";
+          setupBadge = "BO";
+          setupPriority = 1;
+          borderStyle = 'rgba(74, 222, 128, 0.35)';
+          textColor = '#4ade80';
+        } else if (distToLow <= 0.1 && low < prevClose) {
+          setupName = "Day Low BD";
+          setupBadge = "BD";
+          setupPriority = 1;
+          borderStyle = 'rgba(248, 113, 113, 0.35)';
+          textColor = '#f87171';
+        }
+        // 2. Testing PDC (Rank 2)
+        else if (distToPdc <= 0.15) {
+          setupName = "Testing PDC";
+          setupBadge = "PDC";
+          setupPriority = 2;
+          borderStyle = 'rgba(251, 191, 36, 0.35)';
+          textColor = '#fbbf24';
+        }
+        // 3. Volatility Squeeze (Rank 3)
+        else if (rangePercent < 0.8) {
+          setupName = "Squeeze";
+          setupBadge = "SQZ";
+          setupPriority = 3;
+          borderStyle = 'rgba(88, 166, 255, 0.35)';
+          textColor = '#58a6ff';
+        }
+        // 4. Momentum Trend (Rank 4)
+        else if (changePercent >= 1.5) {
+          setupName = "Bullish Trend";
+          setupBadge = "BULL";
+          setupPriority = 4;
+          borderStyle = 'rgba(74, 222, 128, 0.25)';
+          textColor = '#4ade80';
+        } else if (changePercent <= -1.5) {
+          setupName = "Bearish Trend";
+          setupBadge = "BEAR";
+          setupPriority = 4;
+          borderStyle = 'rgba(248, 113, 113, 0.25)';
+          textColor = '#f87171';
+        }
+        
+        processedStocks.push({
+          symbol,
+          price,
+          changePercent,
+          rangePercent,
+          setupName,
+          setupBadge,
+          setupPriority,
+          borderStyle,
+          textColor
+        });
+      });
+      
+      if (processedStocks.length === 0) return;
+
+      // Sort by setup priority first, then sub-sort by rangePercent descending (highest movement)
+      processedStocks.sort((a, b) => {
+        if (a.setupPriority !== b.setupPriority) {
+          return a.setupPriority - b.setupPriority;
+        }
+        return b.rangePercent - a.rangePercent;
+      });
+      
+      const top10 = processedStocks.slice(0, 10);
+      
+      pillsContainer.innerHTML = '';
+      top10.forEach(stock => {
+        const btn = document.createElement('button');
+        btn.className = 'hotlist-pill';
+        btn.onclick = () => loadHotlist(stock.symbol);
+        
+        // Apply dynamic soft border styling directly to the button
+        btn.style.borderColor = stock.borderStyle;
+        btn.style.boxShadow = `0 0 4px ${stock.borderStyle.replace('0.35', '0.05').replace('0.25', '0.03')}`;
+        
+        btn.innerHTML = `
+          <span>${stock.symbol}</span>
+          <span style="font-size: 10px; color: ${stock.textColor}; font-weight: 700; letter-spacing: 0.3px; margin-left: 2px;">${stock.setupBadge}</span>
+        `;
+        pillsContainer.appendChild(btn);
+      });
+    }
+
+    async function runScanner() {
+      const data = await fetchScannerData();
+      processAndRenderScanner(data);
+    }
+
+    async function initScanner() {
+      const input = document.getElementById('sym');
+      const activeSym = input ? input.value.trim() : '';
+      
+      if (!activeSym) {
+        // Clear background refresher interval to save network resources
+        if (scannerIntervalId) {
+          clearInterval(scannerIntervalId);
+          scannerIntervalId = null;
+        }
+        
+        // Revert label to original 'Quick Access:' and restore default pills
+        const titleEl = document.getElementById('hotlist-title');
+        if (titleEl) {
+          titleEl.textContent = 'Quick Access:';
+        }
+        
+        const pillsContainer = document.getElementById('hotlist-pills');
+        if (pillsContainer) {
+          pillsContainer.innerHTML = '';
+          const defaultStocks = ['RELIANCE', 'HDFCBANK', 'ITC', 'SBIN', 'TCS', 'INFY'];
+          defaultStocks.forEach(sym => {
+            const btn = document.createElement('button');
+            btn.className = 'hotlist-pill';
+            btn.onclick = () => loadHotlist(sym);
+            btn.innerHTML = `<span>${sym}</span>`;
+            pillsContainer.appendChild(btn);
+          });
+        }
+        return;
+      }
+      
+      await updateScannerTickers(activeSym);
+      await runScanner();
+      
+      if (scannerIntervalId) clearInterval(scannerIntervalId);
+      
+      scannerIntervalId = setInterval(() => {
+        // Only run refreshes during active market hours to save API bandwidth
+        const date = new Date();
+        const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: '2-digit', minute: '2-digit', weekday: 'short' };
+        const formatter = new Intl.DateTimeFormat('en-US', options);
+        const parts = formatter.formatToParts(date);
+        let hour = 0, minute = 0, weekday = 'Mon';
+        parts.forEach(p => {
+          if (p.type === 'hour') hour = parseInt(p.value, 10);
+          if (p.type === 'minute') minute = parseInt(p.value, 10);
+          if (p.type === 'weekday') weekday = p.value;
+        });
+        const timeVal = hour * 60 + minute;
+        const isWeekend = (weekday === 'Sat' || weekday === 'Sun');
+        const isMarketHours = !isWeekend && timeVal >= 540 && timeVal <= 930;
+        
+        if (isMarketHours) {
+          runScanner();
+        }
+      }, 120000);
     }
 
     function loadHotlist(ticker) {
@@ -1491,6 +1770,9 @@
       if (!raw) return;
       const sym = raw;
 
+      // Dynamically resolve industry peers and run scanner in background
+      updateScannerTickers(sym).then(() => runScanner());
+
       const btn = document.getElementById('btn');
       const statusEl = document.getElementById('status');
       const outputEl = document.getElementById('output');
@@ -2306,6 +2588,7 @@
     // Parse query parameters on load to auto-load a stock and setup listeners
     window.addEventListener('DOMContentLoaded', () => {
       loadLocalStocks();
+      initScanner();
 
       const params = new URLSearchParams(window.location.search);
       const symbol = params.get('symbol') || params.get('sym');
@@ -2324,6 +2607,10 @@
       }, 250);
 
       inputEl.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        if (val === '') {
+          initScanner();
+        }
         debouncedSuggest(e.target.value);
       });
 
