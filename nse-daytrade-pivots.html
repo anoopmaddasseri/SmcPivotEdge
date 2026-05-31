@@ -733,7 +733,7 @@
   <div class="container">
     <div class="main-header">
       <div>
-        <h1>📊 SMCPivotEdge</h1>
+        <h1><span id="app-icon"></span> SMCPivotEdge</h1>
         <p class="subtitle">Institutional Grade Actionable Day Trade &amp; Scalp Levels for NSE</p>
       </div>
       <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Light/Dark Mode" onclick="toggleTheme()">
@@ -768,6 +768,8 @@
   </div>
 
   <script>
+    const APP_ICON = '📊';
+
     // Theme Switcher Functions
     function updateThemeIcon(theme) {
       const btn = document.getElementById('theme-toggle');
@@ -2955,6 +2957,16 @@
       initTheme();
       loadLocalStocks();
       initScanner();
+
+      // Set app icon in heading and browser window favicon dynamically
+      const appIconEl = document.getElementById('app-icon');
+      if (appIconEl) {
+        appIconEl.textContent = APP_ICON;
+      }
+      const faviconLink = document.createElement('link');
+      faviconLink.rel = 'icon';
+      faviconLink.href = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>${APP_ICON}</text></svg>`;
+      document.head.appendChild(faviconLink);
 
       const params = new URLSearchParams(window.location.search);
       const symbol = params.get('symbol') || params.get('sym');
