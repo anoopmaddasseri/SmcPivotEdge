@@ -667,6 +667,43 @@
       allNseStocks = window.ALL_NSE_STOCKS || [];
     }
 
+    const DEFAULT_STOCKS = ['AETHER', 'IREDA', 'HDFCBANK', 'ITC', 'SBIN', 'TCS', 'INFY', 'RELIANCE'];
+
+    function getQuickAccessList() {
+      try {
+        const saved = localStorage.getItem('smc_quick_access_pills');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load quick access recents:', e);
+      }
+      return [...DEFAULT_STOCKS];
+    }
+
+    function saveQuickAccessList(list) {
+      try {
+        localStorage.setItem('smc_quick_access_pills', JSON.stringify(list));
+      } catch (e) {
+        console.error('Failed to save quick access recents:', e);
+      }
+    }
+
+    function addSearchedStockToQuickAccess(symbol) {
+      const cleanSym = symbol.trim().toUpperCase().replace(/\.NS$/, '');
+      if (!cleanSym) return;
+      
+      let currentList = getQuickAccessList();
+      currentList = currentList.filter(sym => sym !== cleanSym);
+      currentList.unshift(cleanSym);
+      currentList = currentList.slice(0, 8);
+      
+      saveQuickAccessList(currentList);
+    }
+
     // Dynamic Sector & Peer Stock Scanner (Zero-Hardcoding, Emoji-Free UI, DTOS sorted)
     let scannerTickers = [];
     let scannerIntervalId = null;
@@ -925,8 +962,8 @@
         const pillsContainer = document.getElementById('hotlist-pills');
         if (pillsContainer) {
           pillsContainer.innerHTML = '';
-          const defaultStocks = ['AETHER', 'IREDA', 'HDFCBANK', 'ITC', 'SBIN', 'TCS', 'INFY', 'RELIANCE'];
-          defaultStocks.forEach(sym => {
+          const currentList = getQuickAccessList();
+          currentList.forEach(sym => {
             const btn = document.createElement('button');
             btn.className = 'hotlist-pill';
             btn.onclick = () => loadHotlist(sym);
@@ -1946,6 +1983,9 @@
         if (!intraJson || !intraJson.chart.result[0].indicators.quote[0]) {
           throw new Error(`Could not fetch data for "${sym}". Ensure Python server is running and ticker is correct.`);
         }
+
+        // Add successfully verified stock to Quick Access Recents
+        addSearchedStockToQuickAccess(sym);
 
         const meta = intraJson.chart.result[0].meta;
         const q = intraJson.chart.result[0].indicators.quote[0];
