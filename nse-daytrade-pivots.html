@@ -653,15 +653,23 @@
     let scannerIntervalId = null;
 
     async function getIndustryForSymbol(symbol) {
-      // 1. Check if the symbol is in our local leaders list (instant)
-      const leader = localNseStocks.find(s => s.symbol.toUpperCase() === symbol.toUpperCase());
+      const cleanSym = symbol.trim().toUpperCase().replace(/\.NS$/, '');
+      
+      // 1. Check if the symbol is in our all stocks database (instant)
+      const stock = allNseStocks.find(s => s.symbol.toUpperCase() === cleanSym);
+      if (stock && stock.industry && stock.industry !== 'Equity') {
+        return stock.industry;
+      }
+      
+      // 2. Check local leaders list (instant)
+      const leader = localNseStocks.find(s => s.symbol.toUpperCase() === cleanSym);
       if (leader && leader.industry) {
         return leader.industry;
       }
       
-      // 2. Fallback to Search API for mid/small-caps (like BBOX) to find their industry sector
+      // 3. Fallback to Search API for mid/small-caps to find their industry sector
       try {
-        const searchUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol + '.NS')}&quotesCount=1&newsCount=0`;
+        const searchUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(cleanSym + '.NS')}&quotesCount=1&newsCount=0`;
         const response = await fetch(PROXY + encodeURIComponent(searchUrl));
         if (response.ok) {
           const data = await response.json();
@@ -683,15 +691,28 @@
       // Get the industry sector
       const industry = await getIndustryForSymbol(cleanSym);
       
-      // Find all stocks in localNseStocks that belong to the same industry
-      let peers = localNseStocks.filter(s => s.industry && s.industry.toLowerCase() === industry.toLowerCase()).map(s => s.symbol.toUpperCase());
+      // 1. Find all matching stocks in our comprehensive nse-all-stocks list
+      let allPeers = allNseStocks.filter(s => s.industry && s.industry.toLowerCase() === industry.toLowerCase()).map(s => s.symbol.toUpperCase());
       
-      // Make sure the active stock is in the list
-      if (!peers.includes(cleanSym)) {
-        peers.push(cleanSym);
-      }
+      // Also filter localNseStocks for the same industry (in case of different spelling/source)
+      let leaderPeers = localNseStocks.filter(s => s.industry && s.industry.toLowerCase() === industry.toLowerCase()).map(s => s.symbol.toUpperCase());
       
-      scannerTickers = peers;
+      // Combine them to get a unique list of all candidates
+      let uniquePeers = Array.from(new Set([...leaderPeers, ...allPeers]));
+      
+      // 2. Exclude the active stock itself from peers
+      uniquePeers = uniquePeers.filter(sym => sym !== cleanSym);
+      
+      // 3. Prioritize leader stocks (from localNseStocks) first
+      const leaderSymbols = new Set(localNseStocks.map(s => s.symbol.toUpperCase()));
+      const sortedPeers = uniquePeers.sort((a, b) => {
+        const aIsLeader = leaderSymbols.has(a) ? 1 : 0;
+        const bIsLeader = leaderSymbols.has(b) ? 1 : 0;
+        return bIsLeader - aIsLeader; // leaders first
+      });
+      
+      // 4. Limit the scan list size to top 40 candidate peers to save network bandwidth and run fast
+      scannerTickers = sortedPeers.slice(0, 40);
       
       // Update the scanner row label with the current sector
       const titleEl = document.getElementById('hotlist-title');
@@ -820,6 +841,7 @@
           price,
           changePercent,
           rangePercent,
+          valueTraded,
           setupName,
           setupBadge,
           setupPriority,
@@ -830,18 +852,18 @@
       
       if (processedStocks.length === 0) return;
 
-      // Sort by setup priority first, then sub-sort by rangePercent descending (highest movement)
+      // Sort by setup priority first, then sub-sort by intraday trading turnover (valueTraded) descending
       processedStocks.sort((a, b) => {
         if (a.setupPriority !== b.setupPriority) {
           return a.setupPriority - b.setupPriority;
         }
-        return b.rangePercent - a.rangePercent;
+        return b.valueTraded - a.valueTraded;
       });
       
-      const top10 = processedStocks.slice(0, 10);
+      const top20 = processedStocks.slice(0, 20);
       
       pillsContainer.innerHTML = '';
-      top10.forEach(stock => {
+      top20.forEach(stock => {
         const btn = document.createElement('button');
         btn.className = 'hotlist-pill';
         btn.onclick = () => loadHotlist(stock.symbol);
